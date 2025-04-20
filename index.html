@@ -458,28 +458,6 @@
             "Holiday"
         ];
         
-        // Shifts that require a Week Off within 7 days
-        const shiftsRequiringWeekOff = [
-            "0600 - 1500",
-            "0700 - 1600",
-            "0800 - 1700",
-            "0900 - 1800",
-            "1000 - 1900",
-            "1030 - 1930",
-            "1100 - 2000",
-            "1130 - 2030",
-            "1200 - 2100",
-            "1300 - 2200",
-            "1400 - 2300",
-            "1500 - 0000",
-            "1600 - 0100",
-            "1700 - 0200",
-            "1800 - 0300",
-            "1900 - 0400",
-            "1800 - 0500",
-            "1900 - 0600"
-        ];
-        
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
             renderUsersList();
@@ -760,11 +738,6 @@
                 if (specialShifts.includes(shift)) {
                     cell.className += ' ' + shift.replace(/\s+/g, '-');
                 }
-                
-                // If it's a shift that requires Week Off within 7 days, enforce validation
-                if (shiftsRequiringWeekOff.includes(shift)) {
-                    enforceWeekOffValidation(userId, dateStr);
-                }
             } else {
                 delete rosterData[userId][dateStr];
                 // Reset cell styling
@@ -778,51 +751,6 @@
             // If in summary tab, update it
             if (document.getElementById('summary-tab').classList.contains('active')) {
                 generateSummary();
-            }
-        }
-        
-        function enforceWeekOffValidation(userId, workingDateStr) {
-            const [year, month, day] = workingDateStr.split('-').map(Number);
-            const workingDate = new Date(year, month - 1, day);
-            
-            // Check if there's a Week Off in the next 7 days
-            let hasWeekOff = false;
-            for (let i = 1; i <= 7; i++) {
-                const checkDate = new Date(workingDate);
-                checkDate.setDate(checkDate.getDate() + i);
-                const checkDateStr = `${checkDate.getFullYear()}-${checkDate.getMonth() + 1}-${checkDate.getDate()}`;
-                
-                if (rosterData[userId]?.[checkDateStr] === "Week Off") {
-                    hasWeekOff = true;
-                    break;
-                }
-            }
-            
-            if (!hasWeekOff) {
-                if (confirm('This shift requires a "Week Off" within the next 7 days. Would you like to set one now?')) {
-                    // Find the next available day (not already assigned)
-                    for (let i = 1; i <= 7; i++) {
-                        const weekOffDate = new Date(workingDate);
-                        weekOffDate.setDate(weekOffDate.getDate() + i);
-                        const weekOffDateStr = `${weekOffDate.getFullYear()}-${weekOffDate.getMonth() + 1}-${weekOffDate.getDate()}`;
-                        
-                        // Skip if this date already has a shift assigned
-                        if (rosterData[userId]?.[weekOffDateStr]) continue;
-                        
-                        // Set Week Off
-                        if (!rosterData[userId]) {
-                            rosterData[userId] = {};
-                        }
-                        rosterData[userId][weekOffDateStr] = "Week Off";
-                        
-                        // Save to localStorage
-                        localStorage.setItem('rosterData', JSON.stringify(rosterData));
-                        
-                        // Regenerate roster to reflect changes
-                        generateRoster();
-                        break;
-                    }
-                }
             }
         }
         
@@ -1072,10 +1000,9 @@
             // Filter users by process if needed
             const filteredUsers = process === 'all' ? users : users.filter(u => u.process === process);
             
-            // 1. Daily shift counts (dates as rows, shifts as columns)
+            // Daily shift counts (dates as rows, shifts as columns)
             let dailyShiftCounts = {};
             let sundayWorkers = [];
-            let weekOffValidationIssues = [];
             
             // Initialize dailyShiftCounts with all dates
             for (let day = 1; day <= daysInMonth; day++) {
@@ -1097,31 +1024,6 @@
                         dailyShiftCounts[day][shift] = (dailyShiftCounts[day][shift] || 0) + 1;
                     }
                     
-                    // Check for shifts that require Week Off
-                    if (shiftsRequiringWeekOff.includes(shift)) {
-                        // Check if there's a Week Off in the next 7 days
-                        let hasWeekOff = false;
-                        for (let i = 1; i <= 7; i++) {
-                            const checkDate = new Date(date);
-                            checkDate.setDate(checkDate.getDate() + i);
-                            const checkDateStr = `${checkDate.getFullYear()}-${checkDate.getMonth() + 1}-${checkDate.getDate()}`;
-                            
-                            if (rosterData[user.id]?.[checkDateStr] === "Week Off") {
-                                hasWeekOff = true;
-                                break;
-                            }
-                        }
-                        
-                        if (!hasWeekOff) {
-                            weekOffValidationIssues.push({
-                                user: user.name,
-                                date: day,
-                                shift: shift,
-                                status: 'Missing Week Off'
-                            });
-                        }
-                    }
-                    
                     // Check for Sunday workers
                     if (date.getDay() === 0 && shift !== 'Week Off' && shift !== 'Holiday' && shift !== 'Not Scheduled') {
                         sundayWorkers.push({
@@ -1136,15 +1038,14 @@
             // Display summary
             displaySummary(
                 dailyShiftCounts, 
-                sundayWorkers, 
-                weekOffValidationIssues, 
+                sundayWorkers,
                 monthName, 
                 year,
                 process
             );
         }
         
-        function displaySummary(dailyShiftCounts, sundayWorkers, weekOffValidationIssues, monthName, year, selectedProcess) {
+        function displaySummary(dailyShiftCounts, sundayWorkers, monthName, year, selectedProcess) {
             let html = `<h3>Shift Summary for ${monthName} ${year} ${selectedProcess !== 'all' ? `(Process: ${selectedProcess})` : ''}</h3>`;
             
             // 1. Daily shift counts (dates as rows, shifts as columns)
@@ -1195,113 +1096,52 @@
             html += `<td><strong>${grandTotal}</strong></td></tr>`;
             
             html += `
-                </tbody>
-            </table>
-        </div>
-    `;
-    
-    // 2. Sunday workers
-    html += `
-        <div class="summary-container">
-            <h4>Sunday Workers (${sundayWorkers.length})</h4>
-    `;
-    
-    if (sundayWorkers.length > 0) {
-        html += `
-            <table class="summary-table">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Date</th>
-                        <th>Shift</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        sundayWorkers.forEach(worker => {
-            html += `
-                <tr>
-                    <td>${worker.user}</td>
-                    <td>${monthName} ${worker.date}</td>
-                    <td>${worker.shift}</td>
-                </tr>
+                        </tbody>
+                    </table>
+                </div>
             `;
-        });
-        
-        html += `
-                </tbody>
-            </table>
-        `;
-    } else {
-        html += '<p>No users working on Sundays</p>';
-    }
-    
-    html += `</div>`;
-    
-    // 3. Week Off validation issues
-    html += `
-        <div class="summary-container">
-            <h4>Week Off Validation</h4>
-    `;
-    
-    if (weekOffValidationIssues.length > 0) {
-        html += `
-            <p class="error">Warning: ${weekOffValidationIssues.length} shifts require a "Week Off" within 7 days</p>
-            <table class="summary-table">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Date</th>
-                        <th>Shift</th>
-                        <th>Next Week Off</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        weekOffValidationIssues.forEach(issue => {
-            // Find the next Week Off for this user after the issue date
-            let nextWeekOff = 'None';
-            const userId = users.find(u => u.name === issue.user)?.id;
             
-            if (userId && rosterData[userId]) {
-                for (let i = 1; i <= 14; i++) { // Check up to 14 days ahead
-                    const checkDate = new Date(year, parseInt(document.getElementById('summary-month-select').value), issue.date);
-                    checkDate.setDate(checkDate.getDate() + i);
-                    const checkDateStr = `${checkDate.getFullYear()}-${checkDate.getMonth() + 1}-${checkDate.getDate()}`;
-                    
-                    if (rosterData[userId][checkDateStr] === "Week Off") {
-                        nextWeekOff = `${checkDate.getDate()} ${checkDate.toLocaleDateString('en-US', { month: 'short' })}`;
-                        break;
-                    }
-                }
+            // 2. Sunday workers
+            html += `
+                <div class="summary-container">
+                    <h4>Sunday Workers (${sundayWorkers.length})</h4>
+            `;
+            
+            if (sundayWorkers.length > 0) {
+                html += `
+                    <table class="summary-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Date</th>
+                                <th>Shift</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                sundayWorkers.forEach(worker => {
+                    html += `
+                        <tr>
+                            <td>${worker.user}</td>
+                            <td>${monthName} ${worker.date}</td>
+                            <td>${worker.shift}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                html += '<p>No users working on Sundays</p>';
             }
             
-            html += `
-                <tr>
-                    <td>${issue.user}</td>
-                    <td>${monthName} ${issue.date}</td>
-                    <td>${issue.shift}</td>
-                    <td>${nextWeekOff}</td>
-                    <td class="error">${issue.status}</td>
-                </tr>
-            `;
-        });
-        
-        html += `
-                </tbody>
-            </table>
-        `;
-    } else {
-        html += '<p class="valid">All shifts that require a "Week Off" have one scheduled within 7 days</p>';
-    }
-    
-    html += `</div>`;
-    
-    document.getElementById('summary-container').innerHTML = html;
-}
+            html += `</div>`;
+            
+            document.getElementById('summary-container').innerHTML = html;
+        }
         
         // Email function (simulated)
         function sendShiftEmail(userId, dateStr) {

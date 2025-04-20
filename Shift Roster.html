@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Shift Roster</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 100%;
+            overflow-x: auto;
+            background-color: rgba(30, 30, 40, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 6px 8px;
+            text-align: left;
+        }
+        th {
+            background-color: rgba(20, 20, 30, 0.9);
+            position: sticky;
+            top: 0;
+            color: #00ffff;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(40, 40, 50, 0.5);
+        }
+        tr:nth-child(odd) {
+            background-color: rgba(30, 30, 40, 0.5);
+        }
+        tr:hover {
+            background-color: rgba(50, 50, 70, 0.7);
+        }
+        select {
+            width: 180px;
+            padding: 6px;
+            background-color: rgba(20, 20, 30, 0.9);
+            color: #e0e0e0;
+            border: 1px solid #444;
+            border-radius: 4px;
+            font-size: 12px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300ffff'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 12px;
+        }
+        select:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+        }
+        option {
+            background-color: rgba(30, 30, 40, 0.9);
+            color: #e0e0e0;
+        }
+        option:checked {
+            background-color: rgba(0, 150, 150, 0.7);
+            color: white;
+        }
+        .shift-cell.Week-Off {
+            background-color: rgba(255, 165, 0, 0.7);
+        }
+        .shift-cell.Comp-Off {
+            background-color: rgba(0, 128, 0, 0.7);
+        }
+        .shift-cell.Leave {
+            background-color: rgba(255, 0, 0, 0.7);
+        }
+        .shift-cell.Back-Up {
+            background-color: rgba(75, 0, 130, 0.7);
+        }
+        .shift-cell.Holiday {
+            background-color: rgba(255, 215, 0, 0.7);
+        }
+        .controls {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        button {
+            padding: 6px 12px;
+            background-color: rgba(0, 180, 180, 0.8);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        button:hover {
+            background-color: rgba(0, 210, 210, 0.9);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        .user-form {
+            margin-bottom: 15px;
+            padding: 12px;
+            background-color: rgba(30, 30, 40, 0.7);
+            border-radius: 5px;
+            border: 1px solid #444;
+        }
+        .user-form input {
+            padding: 6px;
+            margin-right: 8px;
+            background-color: rgba(20, 20, 30, 0.9);
+            color: #e0e0e0;
+            border: 1px solid #444;
+            border-radius: 4px;
+            font-size: 12px;
+            width: 180px;
+        }
+        .user-form input:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+        }
+        .view-controls {
+            margin-bottom: 12px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .view-controls label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .view-controls input[type="radio"] {
+            accent-color: #00ffff;
+        }
+        .tab {
+            display: none;
+        }
+        .tab.active {
+            display: block;
+        }
+        .tab-buttons {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 5px;
+        }
+        .tab-button {
+            background-color: rgba(30, 30, 40, 0.7);
+            border: 1px solid #444;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #e0e0e0;
+            transition: all 0.3s;
+        }
+        .tab-button.active {
+            background-color: rgba(0, 180, 180, 0.8);
+            color: white;
+            border-color: #00ffff;
+        }
+        h1, h3 {
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        h3 {
+            font-size: 16px;
+            margin-top: 0;
+        }
+        label {
+            color: #b0b0b0;
+            font-size: 12px;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(20, 20, 30, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 180, 180, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 210, 210, 0.7);
+        }
+        .summary-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(30, 30, 40, 0.7);
+            border-radius: 5px;
+            border: 1px solid #444;
+        }
+        .summary-table {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .send-email-btn {
+            margin-left: 10px;
+            background-color: rgba(0, 100, 255, 0.8);
+        }
+        .send-email-btn:hover {
+            background-color: rgba(0, 120, 255, 0.9);
+        }
+        .fixed-columns {
+            position: sticky;
+            left: 0;
+            background-color: rgba(30, 30, 40, 0.9);
+            z-index: 1;
+        }
+        .roster-table-container {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+        .roster-table {
+            min-width: 1000px;
+        }
+        .copy-previous-btn {
+            background-color: rgba(180, 0, 180, 0.8);
+        }
+        .copy-previous-btn:hover {
+            background-color: rgba(210, 0, 210, 0.9);
+        }
+        .warning {
+            color: #ff9900;
+            font-weight: bold;
+        }
+        .error {
+            color: #ff3333;
+            font-weight: bold;
+        }
+        .valid {
+            color: #33cc33;
+            font-weight: bold;
+        }
+        .monthly-shift-select {
+            width: 150px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Team Shift Roster</h1>
+    
+    <div class="tab-buttons">
+        <button class="tab-button active" onclick="openTab('roster-tab')">Roster</button>
+        <button class="tab-button" onclick="openTab('manage-tab')">Manage Users</button>
+        <button class="tab-button" onclick="openTab('summary-tab')">Summary</button>
+    </div>
+    
+    <div id="roster-tab" class="tab active">
+        <div class="view-controls">
+            <label>
+                <input type="radio" name="view" value="daily" checked onchange="changeView()"> Daily View
+            </label>
+            <label>
+                <input type="radio" name="view" value="weekly" onchange="changeView()"> Weekly View
+            </label>
+            <label>
+                <input type="radio" name="view" value="monthly" onchange="changeView()"> Monthly View
+            </label>
+            <button onclick="exportToExcel()">Export to Excel</button>
+            <button class="copy-previous-btn" onclick="copyFromPreviousMonth()">Copy from Previous Month</button>
+        </div>
+        
+        <div class="controls">
+            <div>
+                <label for="month-select">Month:</label>
+                <select id="month-select" onchange="generateRoster()">
+                    <option value="0">January</option>
+                    <option value="1">February</option>
+                    <option value="2">March</option>
+                    <option value="3">April</option>
+                    <option value="4">May</option>
+                    <option value="5">June</option>
+                    <option value="6">July</option>
+                    <option value="7">August</option>
+                    <option value="8">September</option>
+                    <option value="9">October</option>
+                    <option value="10">November</option>
+                    <option value="11">December</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="year-select">Year:</label>
+                <select id="year-select" onchange="generateRoster()">
+                    <script>
+                        const currentYear = new Date().getFullYear();
+                        for (let i = currentYear - 1; i <= currentYear + 1; i++) {
+                            document.write(`<option value="${i}" ${i === currentYear ? 'selected' : ''}>${i}</option>`);
+                        }
+                    </script>
+                </select>
+            </div>
+            
+            <div>
+                <label for="week-select">Week (for weekly view):</label>
+                <select id="week-select" onchange="generateRoster()">
+                    <option value="1">Week 1</option>
+                    <option value="2">Week 2</option>
+                    <option value="3">Week 3</option>
+                    <option value="4">Week 4</option>
+                    <option value="5">Week 5</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="day-select">Day (for daily view):</label>
+                <select id="day-select" onchange="generateRoster()">
+                    <script>
+                        for (let i = 1; i <= 31; i++) {
+                            document.write(`<option value="${i}" ${i === new Date().getDate() ? 'selected' : ''}>${i}</option>`);
+                        }
+                    </script>
+                </select>
+            </div>
+        </div>
+        
+        <div class="roster-table-container">
+            <div id="roster-container"></div>
+        </div>
+    </div>
+    
+    <div id="manage-tab" class="tab">
+        <div class="user-form">
+            <h3>Add New User</h3>
+            <input type="text" id="new-user-name" placeholder="User Name">
+            <input type="text" id="new-user-process" placeholder="Process">
+            <input type="text" id="new-user-org" placeholder="Organization">
+            <input type="email" id="new-user-email" placeholder="Email">
+            <button onclick="addUser()">Add User</button>
+        </div>
+        
+        <h3>Current Users</h3>
+        <div class="container">
+            <table id="users-table">
+                <thead>
+                    <tr>
+                        <th>User Name</th>
+                        <th>Process</th>
+                        <th>Organization</th>
+                        <th>Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-list">
+                    <!-- Users will be added here dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="summary-tab" class="tab">
+        <div class="controls">
+            <div>
+                <label for="summary-month-select">Month:</label>
+                <select id="summary-month-select" onchange="generateSummary()">
+                    <option value="0">January</option>
+                    <option value="1">February</option>
+                    <option value="2">March</option>
+                    <option value="3">April</option>
+                    <option value="4">May</option>
+                    <option value="5">June</option>
+                    <option value="6">July</option>
+                    <option value="7">August</option>
+                    <option value="8">September</option>
+                    <option value="9">October</option>
+                    <option value="10">November</option>
+                    <option value="11">December</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="summary-year-select">Year:</label>
+                <select id="summary-year-select" onchange="generateSummary()">
+                    <script>
+                        for (let i = currentYear - 1; i <= currentYear + 1; i++) {
+                            document.write(`<option value="${i}" ${i === currentYear ? 'selected' : ''}>${i}</option>`);
+                        }
+                    </script>
+                </select>
+            </div>
+            
+            <div>
+                <label for="summary-process-select">Process:</label>
+                <select id="summary-process-select" onchange="generateSummary()">
+                    <option value="all">All Processes</option>
+                    <!-- Processes will be added here dynamically -->
+                </select>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div id="summary-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data - in a real app, you might want to load/save this to localStorage or a server
+        let users = [
+            { id: 1, name: "John Doe", process: "Customer Support", org: "Team A", email: "john.doe@example.com" },
+            { id: 2, name: "Jane Smith", process: "Technical Support", org: "Team B", email: "jane.smith@example.com" },
+            { id: 3, name: "Mike Johnson", process: "Sales", org: "Team A", email: "mike.johnson@example.com" },
+        ];
+        
+        let rosterData = {}; // Will store shift assignments {userId: {date: shift}}
+        let monthlyShifts = {}; // Stores monthly shift patterns {userId: {monthYear: shift}}
+        
+        // Shift options for dropdown with color coding
+        const shiftOptions = [
+            "0600 - 1500",
+            "0700 - 1600",
+            "0800 - 1700",
+            "0900 - 1800",
+            "1000 - 1900",
+            "1030 - 1930",
+            "1100 - 2000",
+            "1130 - 2030",
+            "1200 - 2100",
+            "1300 - 2200",
+            "1400 - 2300",
+            "1500 - 0000",
+            "1600 - 0100",
+            "1700 - 0200",
+            "1800 - 0300",
+            "1900 - 0400",
+            "1800 - 0500",
+            "1900 - 0600",
+            "Week Off",
+            "Comp Off",
+            "Leave",
+            "Back Up",
+            "Holiday"
+        ];
+        
+        // Shifts that require a Week Off within 7 days
+        const shiftsRequiringWeekOff = [
+            "0600 - 1500",
+            "0700 - 1600",
+            "0800 - 1700",
+            "0900 - 1800",
+            "1000 - 1900",
+            "1030 - 1930",
+            "1100 - 2000",
+            "1130 - 2030",
+            "1200 - 2100",
+            "1300 - 2200",
+            "1400 - 2300",
+            "1500 - 0000",
+            "1600 - 0100",
+            "1700 - 0200",
+            "1800 - 0300",
+            "1900 - 0400",
+            "1800 - 0500",
+            "1900 - 0600"
+        ];
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            renderUsersList();
+            generateRoster();
+            populateSummaryProcessSelect();
+            generateSummary();
+            
+            // Load data from localStorage if available
+            const savedUsers = localStorage.getItem('rosterUsers');
+            const savedRoster = localStorage.getItem('rosterData');
+            const savedMonthlyShifts = localStorage.getItem('monthlyShifts');
+            
+            if (savedUsers) {
+                users = JSON.parse(savedUsers);
+                renderUsersList();
+                populateSummaryProcessSelect();
+            }
+            
+            if (savedRoster) {
+                rosterData = JSON.parse(savedRoster);
+            }
+            
+            if (savedMonthlyShifts) {
+                monthlyShifts = JSON.parse(savedMonthlyShifts);
+            }
+            
+            // Set current month
+            const currentMonth = new Date().getMonth();
+            document.getElementById('month-select').value = currentMonth;
+            document.getElementById('summary-month-select').value = currentMonth;
+        });
+        
+        // Tab navigation
+        function openTab(tabId) {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => button.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            if (tabId === 'summary-tab') {
+                generateSummary();
+            }
+        }
+        
+        // Change view between daily/weekly/monthly
+        function changeView() {
+            generateRoster();
+        }
+        
+        // Generate the roster based on current view and selected period
+        function generateRoster() {
+            const view = document.querySelector('input[name="view"]:checked').value;
+            const month = parseInt(document.getElementById('month-select').value);
+            const year = parseInt(document.getElementById('year-select').value);
+            
+            let html = '';
+            
+            if (view === 'monthly') {
+                html = generateMonthlyRoster(month, year);
+            } else if (view === 'weekly') {
+                const week = parseInt(document.getElementById('week-select').value);
+                html = generateWeeklyRoster(month, year, week);
+            } else {
+                const day = parseInt(document.getElementById('day-select').value);
+                html = generateDailyRoster(month, year, day);
+            }
+            
+            document.getElementById('roster-container').innerHTML = html;
+        }
+        
+        function generateMonthlyRoster(month, year) {
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDay = new Date(year, month, 1).getDay(); // 0 = Sunday
+            
+            let html = '<table class="roster-table"><thead><tr><th class="fixed-columns">User</th><th class="fixed-columns">Process</th><th class="fixed-columns">Org</th><th class="fixed-columns">Monthly Shift</th>';
+            
+            // Add date headers
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                html += `<th>${day} ${dayName}</th>`;
+            }
+            
+            html += '</tr></thead><tbody>';
+            
+            // Add rows for each user
+            users.forEach(user => {
+                const monthYearKey = `${month}-${year}`;
+                const monthlyShift = monthlyShifts[user.id]?.[monthYearKey];
+                
+                html += `<tr>
+                    <td class="fixed-columns">${user.name}</td>
+                    <td class="fixed-columns">${user.process}</td>
+                    <td class="fixed-columns">${user.org}</td>
+                    <td class="fixed-columns">
+                        <select class="monthly-shift-select" id="monthly-shift-${user.id}" onchange="applyMonthlyShift(${user.id}, ${month}, ${year})">
+                            <option value="">-- Set Monthly --</option>
+                            ${generateShiftOptions(monthlyShift)}
+                        </select>
+                    </td>`;
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month, day);
+                    const dateStr = `${year}-${month + 1}-${day}`;
+                    const shift = getShiftForUser(user.id, dateStr);
+                    
+                    // Determine if this is a special shift for styling
+                    const specialShifts = ["Week Off", "Comp Off", "Leave", "Back Up", "Holiday"];
+                    const isSpecialShift = specialShifts.includes(shift);
+                    const shiftClass = isSpecialShift ? shift.replace(/\s+/g, '-') : '';
+                    
+                    html += `<td class="shift-cell ${shiftClass}">
+                        <select data-user="${user.id}" data-date="${dateStr}" onchange="updateShift(this)">
+                            ${generateShiftOptions(shift)}
+                        </select>
+                        ${monthlyShift && shift === monthlyShift ? '<span title="Monthly pattern">★</span>' : ''}
+                    </td>`;
+                }
+                
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            return html;
+        }
+        
+        function generateWeeklyRoster(month, year, week) {
+            // Calculate the dates for the selected week
+            const weekStart = (week - 1) * 7 + 1;
+            let weekDates = [];
+            
+            for (let i = 0; i < 7; i++) {
+                const day = weekStart + i;
+                if (day > new Date(year, month + 1, 0).getDate()) break;
+                weekDates.push(day);
+            }
+            
+            let html = '<table class="roster-table"><thead><tr><th class="fixed-columns">User</th><th class="fixed-columns">Process</th><th class="fixed-columns">Org</th>';
+            
+            // Add date headers
+            weekDates.forEach(day => {
+                const date = new Date(year, month, day);
+                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                html += `<th>${day} ${dayName}</th>`;
+            });
+            
+            html += '</tr></thead><tbody>';
+            
+            // Add rows for each user
+            users.forEach(user => {
+                html += `<tr>
+                    <td class="fixed-columns">${user.name}</td>
+                    <td class="fixed-columns">${user.process}</td>
+                    <td class="fixed-columns">${user.org}</td>`;
+                
+                weekDates.forEach(day => {
+                    const date = new Date(year, month, day);
+                    const dateStr = `${year}-${month + 1}-${day}`;
+                    const shift = getShiftForUser(user.id, dateStr);
+                    const monthYearKey = `${month}-${year}`;
+                    const monthlyShift = monthlyShifts[user.id]?.[monthYearKey];
+                    
+                    // Determine if this is a special shift for styling
+                    const specialShifts = ["Week Off", "Comp Off", "Leave", "Back Up", "Holiday"];
+                    const isSpecialShift = specialShifts.includes(shift);
+                    const shiftClass = isSpecialShift ? shift.replace(/\s+/g, '-') : '';
+                    
+                    html += `<td class="shift-cell ${shiftClass}">
+                        <select data-user="${user.id}" data-date="${dateStr}" onchange="updateShift(this)">
+                            ${generateShiftOptions(shift)}
+                        </select>
+                        ${monthlyShift && shift === monthlyShift ? '<span title="Monthly pattern">★</span>' : ''}
+                    </td>`;
+                });
+                
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            return html;
+        }
+        
+        function generateDailyRoster(month, year, day) {
+            const date = new Date(year, month, day);
+            const dateStr = `${year}-${month + 1}-${day}`;
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+            
+            let html = `
+                <h3>${day} ${date.toLocaleDateString('en-US', { month: 'long' })} ${year} (${dayName})</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Process</th>
+                            <th>Org</th>
+                            <th>Email</th>
+                            <th>Shift</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // Add rows for each user
+            users.forEach(user => {
+                const shift = getShiftForUser(user.id, dateStr);
+                const monthYearKey = `${month}-${year}`;
+                const monthlyShift = monthlyShifts[user.id]?.[monthYearKey];
+                
+                // Determine if this is a special shift for styling
+                const specialShifts = ["Week Off", "Comp Off", "Leave", "Back Up", "Holiday"];
+                const isSpecialShift = specialShifts.includes(shift);
+                const shiftClass = isSpecialShift ? shift.replace(/\s+/g, '-') : '';
+                
+                html += `
+                    <tr>
+                        <td>${user.name}</td>
+                        <td>${user.process}</td>
+                        <td>${user.org}</td>
+                        <td>${user.email}</td>
+                        <td class="shift-cell ${shiftClass}">
+                            <select data-user="${user.id}" data-date="${dateStr}" onchange="updateShift(this)">
+                                ${generateShiftOptions(shift)}
+                            </select>
+                            ${monthlyShift && shift === monthlyShift ? '<span title="Monthly pattern">★</span>' : ''}
+                        </td>
+                        <td>
+                            <button class="send-email-btn" onclick="sendShiftEmail(${user.id}, '${dateStr}')">Send Email</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            return html;
+        }
+        
+        function generateShiftOptions(selectedShift) {
+            let options = '<option value="">-- Select Shift --</option>';
+            
+            shiftOptions.forEach(shift => {
+                const selected = shift === selectedShift ? 'selected' : '';
+                options += `<option value="${shift}" ${selected}>${shift}</option>`;
+            });
+            
+            return options;
+        }
+        
+        function getShiftForUser(userId, dateStr) {
+            if (!rosterData[userId]) return '';
+            return rosterData[userId][dateStr] || '';
+        }
+        
+        function updateShift(selectElement) {
+            const userId = parseInt(selectElement.dataset.user);
+            const dateStr = selectElement.dataset.date;
+            const shift = selectElement.value;
+            
+            if (!rosterData[userId]) {
+                rosterData[userId] = {};
+            }
+            
+            if (shift) {
+                rosterData[userId][dateStr] = shift;
+                
+                // Update cell styling based on shift type
+                const cell = selectElement.parentElement;
+                // Remove all shift classes
+                cell.className = cell.className.replace(/(^|\s)shift-cell-\S+/g, '');
+                cell.className = cell.className.replace(/(^|\s)shift-cell/g, '');
+                // Add base class and any special class
+                cell.className += ' shift-cell';
+                const specialShifts = ["Week Off", "Comp Off", "Leave", "Back Up", "Holiday"];
+                if (specialShifts.includes(shift)) {
+                    cell.className += ' ' + shift.replace(/\s+/g, '-');
+                }
+                
+                // If it's a shift that requires Week Off within 7 days, enforce validation
+                if (shiftsRequiringWeekOff.includes(shift)) {
+                    enforceWeekOffValidation(userId, dateStr);
+                }
+            } else {
+                delete rosterData[userId][dateStr];
+                // Reset cell styling
+                const cell = selectElement.parentElement;
+                cell.className = 'shift-cell';
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('rosterData', JSON.stringify(rosterData));
+            
+            // If in summary tab, update it
+            if (document.getElementById('summary-tab').classList.contains('active')) {
+                generateSummary();
+            }
+        }
+        
+        function enforceWeekOffValidation(userId, workingDateStr) {
+            const [year, month, day] = workingDateStr.split('-').map(Number);
+            const workingDate = new Date(year, month - 1, day);
+            
+            // Check if there's a Week Off in the next 7 days
+            let hasWeekOff = false;
+            for (let i = 1; i <= 7; i++) {
+                const checkDate = new Date(workingDate);
+                checkDate.setDate(checkDate.getDate() + i);
+                const checkDateStr = `${checkDate.getFullYear()}-${checkDate.getMonth() + 1}-${checkDate.getDate()}`;
+                
+                if (rosterData[userId]?.[checkDateStr] === "Week Off") {
+                    hasWeekOff = true;
+                    break;
+                }
+            }
+            
+            if (!hasWeekOff) {
+                if (confirm('This shift requires a "Week Off" within the next 7 days. Would you like to set one now?')) {
+                    // Find the next available day (not already assigned)
+                    for (let i = 1; i <= 7; i++) {
+                        const weekOffDate = new Date(workingDate);
+                        weekOffDate.setDate(weekOffDate.getDate() + i);
+                        const weekOffDateStr = `${weekOffDate.getFullYear()}-${weekOffDate.getMonth() + 1}-${weekOffDate.getDate()}`;
+                        
+                        // Skip if this date already has a shift assigned
+                        if (rosterData[userId]?.[weekOffDateStr]) continue;
+                        
+                        // Set Week Off
+                        if (!rosterData[userId]) {
+                            rosterData[userId] = {};
+                        }
+                        rosterData[userId][weekOffDateStr] = "Week Off";
+                        
+                        // Save to localStorage
+                        localStorage.setItem('rosterData', JSON.stringify(rosterData));
+                        
+                        // Regenerate roster to reflect changes
+                        generateRoster();
+                        break;
+                    }
+                }
+            }
+        }
+        
+        function applyMonthlyShift(userId, month, year) {
+            const selectElement = document.getElementById(`monthly-shift-${userId}`);
+            const shift = selectElement.value;
+            
+            if (!shift) {
+                // Clear monthly shift if empty option selected
+                const monthYearKey = `${month}-${year}`;
+                if (monthlyShifts[userId]) {
+                    delete monthlyShifts[userId][monthYearKey];
+                }
+                localStorage.setItem('monthlyShifts', JSON.stringify(monthlyShifts));
+                generateRoster();
+                return;
+            }
+            
+            if (confirm(`Apply "${shift}" shift for this user for the entire month? You can still change individual days later.`)) {
+                const monthYearKey = `${month}-${year}`;
+                
+                if (!monthlyShifts[userId]) {
+                    monthlyShifts[userId] = {};
+                }
+                monthlyShifts[userId][monthYearKey] = shift;
+                
+                // Apply to all days in month
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                if (!rosterData[userId]) {
+                    rosterData[userId] = {};
+                }
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const currentDateStr = `${year}-${month + 1}-${day}`;
+                    rosterData[userId][currentDateStr] = shift;
+                }
+                
+                // Save to localStorage
+                localStorage.setItem('rosterData', JSON.stringify(rosterData));
+                localStorage.setItem('monthlyShifts', JSON.stringify(monthlyShifts));
+                
+                // Regenerate roster
+                generateRoster();
+            }
+        }
+        
+        function copyFromPreviousMonth() {
+            const month = parseInt(document.getElementById('month-select').value);
+            const year = parseInt(document.getElementById('year-select').value);
+            
+            // Calculate previous month
+            let prevMonth = month - 1;
+            let prevYear = year;
+            if (prevMonth < 0) {
+                prevMonth = 11;
+                prevYear--;
+            }
+            
+            if (confirm(`Copy shifts from ${new Date(prevYear, prevMonth, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} to ${new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}?`)) {
+                const prevMonthYearKey = `${prevMonth}-${prevYear}`;
+                const currentMonthYearKey = `${month}-${year}`;
+                
+                // Copy monthly shifts
+                users.forEach(user => {
+                    if (monthlyShifts[user.id]?.[prevMonthYearKey]) {
+                        if (!monthlyShifts[user.id]) {
+                            monthlyShifts[user.id] = {};
+                        }
+                        monthlyShifts[user.id][currentMonthYearKey] = monthlyShifts[user.id][prevMonthYearKey];
+                    }
+                });
+                
+                // Copy individual shifts (for days that exist in both months)
+                const daysInCurrentMonth = new Date(year, month + 1, 0).getDate();
+                const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
+                const daysToCopy = Math.min(daysInCurrentMonth, daysInPrevMonth);
+                
+                users.forEach(user => {
+                    if (!rosterData[user.id]) return;
+                    
+                    for (let day = 1; day <= daysToCopy; day++) {
+                        const prevDateStr = `${prevYear}-${prevMonth + 1}-${day}`;
+                        const currentDateStr = `${year}-${month + 1}-${day}`;
+                        
+                        if (rosterData[user.id][prevDateStr]) {
+                            if (!rosterData[user.id]) {
+                                rosterData[user.id] = {};
+                            }
+                            rosterData[user.id][currentDateStr] = rosterData[user.id][prevDateStr];
+                        }
+                    }
+                });
+                
+                // Save to localStorage
+                localStorage.setItem('rosterData', JSON.stringify(rosterData));
+                localStorage.setItem('monthlyShifts', JSON.stringify(monthlyShifts));
+                
+                // Regenerate roster
+                generateRoster();
+            }
+        }
+        
+        // User management functions
+        function renderUsersList() {
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = '';
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.name}</td>
+                    <td>${user.process}</td>
+                    <td>${user.org}</td>
+                    <td>${user.email}</td>
+                    <td>
+                        <button onclick="editUser(${user.id})">Edit</button>
+                        <button onclick="deleteUser(${user.id})">Delete</button>
+                    </td>
+                `;
+                usersList.appendChild(row);
+            });
+        }
+        
+        function populateSummaryProcessSelect() {
+            const processSelect = document.getElementById('summary-process-select');
+            // Clear existing options except "All Processes"
+            while (processSelect.options.length > 1) {
+                processSelect.remove(1);
+            }
+            
+            // Get unique processes
+            const processes = [...new Set(users.map(user => user.process))];
+            
+            // Add process options
+            processes.forEach(process => {
+                const option = document.createElement('option');
+                option.value = process;
+                option.textContent = process;
+                processSelect.appendChild(option);
+            });
+        }
+        
+        function addUser() {
+            const name = document.getElementById('new-user-name').value.trim();
+            const process = document.getElementById('new-user-process').value.trim();
+            const org = document.getElementById('new-user-org').value.trim();
+            const email = document.getElementById('new-user-email').value.trim();
+            
+            if (!name) {
+                alert('Please enter a user name');
+                return;
+            }
+            
+            if (email && !validateEmail(email)) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
+            
+            users.push({
+                id: newId,
+                name,
+                process,
+                org,
+                email
+            });
+            
+            // Clear input fields
+            document.getElementById('new-user-name').value = '';
+            document.getElementById('new-user-process').value = '';
+            document.getElementById('new-user-org').value = '';
+            document.getElementById('new-user-email').value = '';
+            
+            // Save and refresh
+            localStorage.setItem('rosterUsers', JSON.stringify(users));
+            renderUsersList();
+            populateSummaryProcessSelect();
+            generateRoster();
+        }
+        
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+        
+        function editUser(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+            
+            const newName = prompt('Enter new name:', user.name);
+            if (newName === null) return;
+            
+            const newProcess = prompt('Enter new process:', user.process);
+            if (newProcess === null) return;
+            
+            const newOrg = prompt('Enter new organization:', user.org);
+            if (newOrg === null) return;
+            
+            const newEmail = prompt('Enter new email:', user.email);
+            if (newEmail === null) return;
+            
+            if (newEmail && !validateEmail(newEmail)) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            user.name = newName.trim();
+            user.process = newProcess.trim();
+            user.org = newOrg.trim();
+            user.email = newEmail.trim();
+            
+            // Save and refresh
+            localStorage.setItem('rosterUsers', JSON.stringify(users));
+            renderUsersList();
+            populateSummaryProcessSelect();
+            generateRoster();
+        }
+        
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                users = users.filter(u => u.id !== userId);
+                
+                // Remove from roster data
+                delete rosterData[userId];
+                delete monthlyShifts[userId];
+                
+                // Save and refresh
+                localStorage.setItem('rosterUsers', JSON.stringify(users));
+                localStorage.setItem('rosterData', JSON.stringify(rosterData));
+                localStorage.setItem('monthlyShifts', JSON.stringify(monthlyShifts));
+                renderUsersList();
+                populateSummaryProcessSelect();
+                generateRoster();
+            }
+        }
+        
+        // Summary functions
+        function generateSummary() {
+            const month = parseInt(document.getElementById('summary-month-select').value);
+            const year = parseInt(document.getElementById('summary-year-select').value);
+            const process = document.getElementById('summary-process-select').value;
+            
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long' });
+            
+            // Filter users by process if needed
+            const filteredUsers = process === 'all' ? users : users.filter(u => u.process === process);
+            
+            // 1. Daily shift counts (dates as rows, shifts as columns)
+            let dailyShiftCounts = {};
+            let sundayWorkers = [];
+            let weekOffValidationIssues = [];
+            
+            // Initialize dailyShiftCounts with all dates
+            for (let day = 1; day <= daysInMonth; day++) {
+                dailyShiftCounts[day] = {};
+                shiftOptions.forEach(shift => {
+                    dailyShiftCounts[day][shift] = 0;
+                });
+            }
+            
+            // Process each user's shifts
+            filteredUsers.forEach(user => {
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${year}-${month + 1}-${day}`;
+                    const date = new Date(year, month, day);
+                    const shift = getShiftForUser(user.id, dateStr) || 'Not Scheduled';
+                    
+                    // Count users in each shift
+                    if (shift !== 'Not Scheduled') {
+                        dailyShiftCounts[day][shift] = (dailyShiftCounts[day][shift] || 0) + 1;
+                    }
+                    
+                    // Check for shifts that require Week Off
+                    if (shiftsRequiringWeekOff.includes(shift)) {
+                        // Check if there's a Week Off in the next 7 days
+                        let hasWeekOff = false;
+                        for (let i = 1; i <= 7; i++) {
+                            const checkDate = new Date(date);
+                            checkDate.setDate(checkDate.getDate() + i);
+                            const checkDateStr = `${checkDate.getFullYear()}-${checkDate.getMonth() + 1}-${checkDate.getDate()}`;
+                            
+                            if (rosterData[user.id]?.[checkDateStr] === "Week Off") {
+                                hasWeekOff = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!hasWeekOff) {
+                            weekOffValidationIssues.push({
+                                user: user.name,
+                                date: day,
+                                shift: shift,
+                                status: 'Missing Week Off'
+                            });
+                        }
+                    }
+                    
+                    // Check for Sunday workers
+                    if (date.getDay() === 0 && shift !== 'Week Off' && shift !== 'Holiday' && shift !== 'Not Scheduled') {
+                        sundayWorkers.push({
+                            user: user.name,
+                            date: day,
+                            shift: shift
+                        });
+                    }
+                }
+            });
+            
+            // Display summary
+            displaySummary(
+                dailyShiftCounts, 
+                sundayWorkers, 
+                weekOffValidationIssues, 
+                monthName, 
+                year,
+                process
+            );
+        }
+        
+        function displaySummary(dailyShiftCounts, sundayWorkers, weekOffValidationIssues, monthName, year, selectedProcess) {
+            let html = `<h3>Shift Summary for ${monthName} ${year} ${selectedProcess !== 'all' ? `(Process: ${selectedProcess})` : ''}</h3>`;
+            
+            // 1. Daily shift counts (dates as rows, shifts as columns)
+            html += `
+                <div class="summary-container">
+                    <h4>Daily Shift Counts</h4>
+                    <table class="summary-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                ${shiftOptions.map(shift => `<th>${shift}</th>`).join('')}
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            // Calculate totals for each shift
+            const shiftTotals = {};
+            shiftOptions.forEach(shift => {
+                shiftTotals[shift] = 0;
+            });
+            
+            Object.entries(dailyShiftCounts).forEach(([day, shifts]) => {
+                const date = new Date(year, parseInt(document.getElementById('summary-month-select').value), parseInt(day));
+                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                
+                let rowTotal = 0;
+                html += `<tr><td>${day} ${dayName}</td>`;
+                
+                shiftOptions.forEach(shift => {
+                    const count = shifts[shift] || 0;
+                    rowTotal += count;
+                    shiftTotals[shift] += count;
+                    html += `<td>${count > 0 ? count : ''}</td>`;
+                });
+                
+                html += `<td><strong>${rowTotal}</strong></td></tr>`;
+            });
+            
+            // Add grand total row
+            html += `<tr><td><strong>Total</strong></td>`;
+            let grandTotal = 0;
+            shiftOptions.forEach(shift => {
+                html += `<td><strong>${shiftTotals[shift] > 0 ? shiftTotals[shift] : ''}</strong></td>`;
+                grandTotal += shiftTotals[shift];
+            });
+            html += `<td><strong>${grandTotal}</strong></td></tr>`;
+            
+            html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    // 2. Sunday workers
+    html += `
+        <div class="summary-container">
+            <h4>Sunday Workers (${sundayWorkers.length})</h4>
+    `;
+    
+    if (sundayWorkers.length > 0) {
+        html += `
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Date</th>
+                        <th>Shift</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        sundayWorkers.forEach(worker => {
+            html += `
+                <tr>
+                    <td>${worker.user}</td>
+                    <td>${monthName} ${worker.date}</td>
+                    <td>${worker.shift}</td>
+                </tr>
+            `;
+        });
+        
+        html += `
+                </tbody>
+            </table>
+        `;
+    } else {
+        html += '<p>No users working on Sundays</p>';
+    }
+    
+    html += `</div>`;
+    
+    // 3. Week Off validation issues
+    html += `
+        <div class="summary-container">
+            <h4>Week Off Validation</h4>
+    `;
+    
+    if (weekOffValidationIssues.length > 0) {
+        html += `
+            <p class="error">Warning: ${weekOffValidationIssues.length} shifts require a "Week Off" within 7 days</p>
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Date</th>
+                        <th>Shift</th>
+                        <th>Next Week Off</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        weekOffValidationIssues.forEach(issue => {
+            // Find the next Week Off for this user after the issue date
+            let nextWeekOff = 'None';
+            const userId = users.find(u => u.name === issue.user)?.id;
+            
+            if (userId && rosterData[userId]) {
+                for (let i = 1; i <= 14; i++) { // Check up to 14 days ahead
+                    const checkDate = new Date(year, parseInt(document.getElementById('summary-month-select').value), issue.date);
+                    checkDate.setDate(checkDate.getDate() + i);
+                    const checkDateStr = `${checkDate.getFullYear()}-${checkDate.getMonth() + 1}-${checkDate.getDate()}`;
+                    
+                    if (rosterData[userId][checkDateStr] === "Week Off") {
+                        nextWeekOff = `${checkDate.getDate()} ${checkDate.toLocaleDateString('en-US', { month: 'short' })}`;
+                        break;
+                    }
+                }
+            }
+            
+            html += `
+                <tr>
+                    <td>${issue.user}</td>
+                    <td>${monthName} ${issue.date}</td>
+                    <td>${issue.shift}</td>
+                    <td>${nextWeekOff}</td>
+                    <td class="error">${issue.status}</td>
+                </tr>
+            `;
+        });
+        
+        html += `
+                </tbody>
+            </table>
+        `;
+    } else {
+        html += '<p class="valid">All shifts that require a "Week Off" have one scheduled within 7 days</p>';
+    }
+    
+    html += `</div>`;
+    
+    document.getElementById('summary-container').innerHTML = html;
+}
+        
+        // Email function (simulated)
+        function sendShiftEmail(userId, dateStr) {
+            const user = users.find(u => u.id === userId);
+            if (!user || !user.email) {
+                alert('User email not found');
+                return;
+            }
+            
+            const shift = getShiftForUser(userId, dateStr);
+            if (!shift) {
+                alert('No shift assigned for this date');
+                return;
+            }
+            
+            const [year, month, day] = dateStr.split('-');
+            const date = new Date(year, month - 1, day);
+            const dateFormatted = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            // In a real app, you would send an actual email here
+            // This is just a simulation
+            alert(`Email would be sent to: ${user.email}\nSubject: Your Shift Update\n\nDear ${user.name},\n\nYour shift on ${dateFormatted} has been updated to: ${shift}\n\nThank you,\nShift Management Team`);
+            
+            console.log(`Email sent to ${user.email} about shift ${shift} on ${dateStr}`);
+        }
+        
+        // Export to Excel
+        function exportToExcel() {
+            const view = document.querySelector('input[name="view"]:checked').value;
+            const month = parseInt(document.getElementById('month-select').value);
+            const year = parseInt(document.getElementById('year-select').value);
+            const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long' });
+            
+            let data = [];
+            let headers = ['User', 'Process', 'Organization'];
+            
+            if (view === 'monthly') {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                // Add date headers
+                for (let day = 1; day <= daysInMonth; day++) {
+                    headers.push(`${monthName} ${day}`);
+                }
+                
+                // Add user data
+                users.forEach(user => {
+                    const row = [user.name, user.process, user.org];
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dateStr = `${year}-${month + 1}-${day}`;
+                        row.push(getShiftForUser(user.id, dateStr) || '');
+                    }
+                    
+                    data.push(row);
+                });
+            } 
+            else if (view === 'weekly') {
+                const week = parseInt(document.getElementById('week-select').value);
+                const weekStart = (week - 1) * 7 + 1;
+                let weekDates = [];
+                
+                for (let i = 0; i < 7; i++) {
+                    const day = weekStart + i;
+                    if (day > new Date(year, month + 1, 0).getDate()) break;
+                    weekDates.push(day);
+                    headers.push(`${monthName} ${day}`);
+                }
+                
+                // Add user data
+                users.forEach(user => {
+                    const row = [user.name, user.process, user.org];
+                    
+                    weekDates.forEach(day => {
+                        const dateStr = `${year}-${month + 1}-${day}`;
+                        row.push(getShiftForUser(user.id, dateStr) || '');
+                    });
+                    
+                    data.push(row);
+                });
+            } 
+            else {
+                const day = parseInt(document.getElementById('day-select').value);
+                headers.push(`${monthName} ${day}`);
+                
+                // Add user data
+                users.forEach(user => {
+                    const dateStr = `${year}-${month + 1}-${day}`;
+                    data.push([
+                        user.name,
+                        user.process,
+                        user.org,
+                        getShiftForUser(user.id, dateStr) || ''
+                    ]);
+                });
+            }
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+            XLSX.utils.book_append_sheet(wb, ws, 'Shift Roster');
+            
+            // Generate file name
+            let fileName = `Shift_Roster_${monthName}_${year}`;
+            if (view === 'weekly') {
+                fileName += `_Week${week}`;
+            } else if (view === 'daily') {
+                fileName += `_Day${day}`;
+            }
+            
+            // Export
+            XLSX.writeFile(wb, `${fileName}.xlsx`);
+        }
+    </script>
+</body>
+</html>

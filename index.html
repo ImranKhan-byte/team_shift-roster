@@ -3,10 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Shift Roster</title>
+    <title>Operations Management Tool</title>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <style>
-        body {
+        /* Login Screen Styles */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        }
+        .login-container {
+            background-color: rgba(30, 30, 40, 0.9);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            width: 350px;
+            text-align: center;
+        }
+        .login-container h1 {
+            color: #00ffff;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+        .login-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: rgba(20, 20, 30, 0.9);
+            color: #e0e0e0;
+            border: 1px solid #444;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .login-input:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+        }
+        .login-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: rgba(0, 180, 180, 0.8);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        .login-btn:hover {
+            background-color: rgba(0, 210, 210, 0.9);
+        }
+        .login-error {
+            color: #ff3333;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        /* Main Application Styles */
+        #app-container {
+            display: none;
             font-family: 'Arial', sans-serif;
             font-size: 12px;
             margin: 0;
@@ -261,234 +319,547 @@
             width: 150px;
             margin-right: 5px;
         }
+        .user-access-form {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(30, 30, 40, 0.7);
+            border-radius: 5px;
+            border: 1px solid #444;
+        }
+        .user-access-form h3 {
+            margin-bottom: 10px;
+        }
+        .user-access-form input {
+            padding: 6px;
+            margin-right: 8px;
+            background-color: rgba(20, 20, 30, 0.9);
+            color: #e0e0e0;
+            border: 1px solid #444;
+            border-radius: 4px;
+            font-size: 12px;
+            width: 180px;
+        }
+        .access-level-select {
+            width: 120px;
+        }
+        .user-access-table {
+            margin-top: 15px;
+        }
+        .bulk-email-btn {
+            background-color: rgba(0, 100, 200, 0.8);
+        }
+        .bulk-email-btn:hover {
+            background-color: rgba(0, 120, 220, 0.9);
+        }
     </style>
 </head>
 <body>
-    <h1>Team Shift Roster</h1>
-    
-    <div class="tab-buttons">
-        <button class="tab-button active" onclick="openTab('roster-tab')">Roster</button>
-        <button class="tab-button" onclick="openTab('manage-tab')">Manage Users</button>
-        <button class="tab-button" onclick="openTab('summary-tab')">Summary</button>
-    </div>
-    
-    <div id="roster-tab" class="tab active">
-        <div class="view-controls">
-            <label>
-                <input type="radio" name="view" value="daily" checked onchange="changeView()"> Daily View
-            </label>
-            <label>
-                <input type="radio" name="view" value="weekly" onchange="changeView()"> Weekly View
-            </label>
-            <label>
-                <input type="radio" name="view" value="monthly" onchange="changeView()"> Monthly View
-            </label>
-            <button onclick="exportToExcel()">Export to Excel</button>
-            <button class="copy-previous-btn" onclick="copyFromPreviousMonth()">Copy from Previous Month</button>
-        </div>
-        
-        <div class="controls">
-            <div>
-                <label for="month-select">Month:</label>
-                <select id="month-select" onchange="generateRoster()">
-                    <option value="0">January</option>
-                    <option value="1">February</option>
-                    <option value="2">March</option>
-                    <option value="3">April</option>
-                    <option value="4">May</option>
-                    <option value="5">June</option>
-                    <option value="6">July</option>
-                    <option value="7">August</option>
-                    <option value="8">September</option>
-                    <option value="9">October</option>
-                    <option value="10">November</option>
-                    <option value="11">December</option>
-                </select>
-            </div>
-            
-            <div>
-                <label for="year-select">Year:</label>
-                <select id="year-select" onchange="generateRoster()">
-                    <script>
-                        const currentYear = new Date().getFullYear();
-                        for (let i = currentYear - 1; i <= currentYear + 1; i++) {
-                            document.write(`<option value="${i}" ${i === currentYear ? 'selected' : ''}>${i}</option>`);
-                        }
-                    </script>
-                </select>
-            </div>
-            
-            <div>
-                <label for="week-select">Week (for weekly view):</label>
-                <select id="week-select" onchange="generateRoster()">
-                    <option value="1">Week 1</option>
-                    <option value="2">Week 2</option>
-                    <option value="3">Week 3</option>
-                    <option value="4">Week 4</option>
-                    <option value="5">Week 5</option>
-                </select>
-            </div>
-            
-            <div>
-                <label for="day-select">Day (for daily view):</label>
-                <select id="day-select" onchange="generateRoster()">
-                    <script>
-                        for (let i = 1; i <= 31; i++) {
-                            document.write(`<option value="${i}" ${i === new Date().getDate() ? 'selected' : ''}>${i}</option>`);
-                        }
-                    </script>
-                </select>
-            </div>
-        </div>
-        
-        <div class="roster-table-container">
-            <div id="roster-container"></div>
-        </div>
-    </div>
-    
-    <div id="manage-tab" class="tab">
-        <div class="user-form">
-            <h3>Add New User</h3>
-            <input type="text" id="new-user-name" placeholder="User Name">
-            <input type="text" id="new-user-process" placeholder="Process">
-            <input type="text" id="new-user-org" placeholder="Organization">
-            <input type="email" id="new-user-email" placeholder="Email">
-            <button onclick="addUser()">Add User</button>
-        </div>
-        
-        <h3>Current Users</h3>
-        <div class="container">
-            <table id="users-table">
-                <thead>
-                    <tr>
-                        <th>User Name</th>
-                        <th>Process</th>
-                        <th>Organization</th>
-                        <th>Email</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="users-list">
-                    <!-- Users will be added here dynamically -->
-                </tbody>
-            </table>
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="login-container">
+            <h1>Operations Management Tool</h1>
+            <select id="login-role" class="login-input">
+                <option value="">Select Role</option>
+                <option value="manager">Manager</option>
+                <option value="associate">Associate</option>
+            </select>
+            <input type="text" id="login-username" class="login-input" placeholder="Username">
+            <input type="password" id="login-password" class="login-input" placeholder="Password">
+            <button id="login-btn" class="login-btn">Login</button>
+            <div id="login-error" class="login-error"></div>
         </div>
     </div>
 
-    <div id="summary-tab" class="tab">
-        <div class="controls">
-            <div>
-                <label for="summary-month-select">Month:</label>
-                <select id="summary-month-select" onchange="generateSummary()">
-                    <option value="0">January</option>
-                    <option value="1">February</option>
-                    <option value="2">March</option>
-                    <option value="3">April</option>
-                    <option value="4">May</option>
-                    <option value="5">June</option>
-                    <option value="6">July</option>
-                    <option value="7">August</option>
-                    <option value="8">September</option>
-                    <option value="9">October</option>
-                    <option value="10">November</option>
-                    <option value="11">December</option>
-                </select>
+    <!-- Main Application -->
+    <div id="app-container">
+        <h1>Operations Management Tool</h1>
+        
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="openTab('roster-tab')">Roster</button>
+            <button class="tab-button" onclick="openTab('manage-tab')">Manage Users</button>
+            <button class="tab-button" onclick="openTab('summary-tab')">Summary</button>
+            <button class="tab-button" onclick="openTab('time-tracking-tab')">Time Tracking</button>
+            <button class="tab-button" onclick="logout()" style="margin-left: auto;">Logout</button>
+        </div>
+        
+        <div id="roster-tab" class="tab active">
+            <div class="view-controls">
+                <label>
+                    <input type="radio" name="view" value="daily" checked onchange="changeView()"> Daily View
+                </label>
+                <label>
+                    <input type="radio" name="view" value="weekly" onchange="changeView()"> Weekly View
+                </label>
+                <label>
+                    <input type="radio" name="view" value="monthly" onchange="changeView()"> Monthly View
+                </label>
+                <button onclick="exportToExcel()">Export to Excel</button>
+                <button class="copy-previous-btn" onclick="copyFromPreviousMonth()">Copy from Previous Month</button>
+                <button class="bulk-email-btn" onclick="sendBulkEmail()">Send Bulk Email</button>
             </div>
             
-            <div>
-                <label for="summary-year-select">Year:</label>
-                <select id="summary-year-select" onchange="generateSummary()">
-                    <script>
-                        for (let i = currentYear - 1; i <= currentYear + 1; i++) {
-                            document.write(`<option value="${i}" ${i === currentYear ? 'selected' : ''}>${i}</option>`);
-                        }
-                    </script>
-                </select>
+            <div class="controls">
+                <div>
+                    <label for="month-select">Month:</label>
+                    <select id="month-select" onchange="generateRoster()">
+                        <option value="0">January</option>
+                        <option value="1">February</option>
+                        <option value="2">March</option>
+                        <option value="3">April</option>
+                        <option value="4">May</option>
+                        <option value="5">June</option>
+                        <option value="6">July</option>
+                        <option value="7">August</option>
+                        <option value="8">September</option>
+                        <option value="9">October</option>
+                        <option value="10">November</option>
+                        <option value="11">December</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="year-select">Year:</label>
+                    <select id="year-select" onchange="generateRoster()">
+                        <script>
+                            const currentYear = new Date().getFullYear();
+                            for (let i = currentYear - 1; i <= currentYear + 1; i++) {
+                                document.write(`<option value="${i}" ${i === currentYear ? 'selected' : ''}>${i}</option>`);
+                            }
+                        </script>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="week-select">Week (for weekly view):</label>
+                    <select id="week-select" onchange="generateRoster()">
+                        <option value="1">Week 1</option>
+                        <option value="2">Week 2</option>
+                        <option value="3">Week 3</option>
+                        <option value="4">Week 4</option>
+                        <option value="5">Week 5</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="day-select">Day (for daily view):</label>
+                    <select id="day-select" onchange="generateRoster()">
+                        <script>
+                            for (let i = 1; i <= 31; i++) {
+                                document.write(`<option value="${i}" ${i === new Date().getDate() ? 'selected' : ''}>${i}</option>`);
+                            }
+                        </script>
+                    </select>
+                </div>
             </div>
             
-            <div>
-                <label for="summary-process-select">Process:</label>
-                <select id="summary-process-select" onchange="generateSummary()">
-                    <option value="all">All Processes</option>
-                    <!-- Processes will be added here dynamically -->
-                </select>
+            <div class="roster-table-container">
+                <div id="roster-container"></div>
             </div>
         </div>
         
-        <div class="container">
-            <div id="summary-container"></div>
+        <div id="manage-tab" class="tab">
+            <div class="user-form">
+                <h3>Add New User</h3>
+                <input type="text" id="new-user-name" placeholder="User Name">
+                <input type="text" id="new-user-process" placeholder="Process">
+                <input type="text" id="new-user-org" placeholder="Organization">
+                <input type="email" id="new-user-email" placeholder="Email">
+                <button onclick="addUser()">Add User</button>
+            </div>
+            
+            <div class="user-access-form" id="user-access-section">
+                <h3>User Access Management</h3>
+                <select id="access-user-select">
+                    <!-- Users will be added dynamically -->
+                </select>
+                <select id="access-level" class="access-level-select">
+                    <option value="manager">Manager</option>
+                    <option value="associate">Associate</option>
+                </select>
+                <input type="text" id="access-username" placeholder="Username">
+                <input type="password" id="access-password" placeholder="Password">
+                <button onclick="setUserAccess()">Set Access</button>
+            </div>
+            
+            <h3>Current Users</h3>
+            <div class="container">
+                <table id="users-table">
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Process</th>
+                            <th>Organization</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-list">
+                        <!-- Users will be added here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="summary-tab" class="tab">
+            <div class="controls">
+                <div>
+                    <label for="summary-month-select">Month:</label>
+                    <select id="summary-month-select" onchange="generateSummary()">
+                        <option value="0">January</option>
+                        <option value="1">February</option>
+                        <option value="2">March</option>
+                        <option value="3">April</option>
+                        <option value="4">May</option>
+                        <option value="5">June</option>
+                        <option value="6">July</option>
+                        <option value="7">August</option>
+                        <option value="8">September</option>
+                        <option value="9">October</option>
+                        <option value="10">November</option>
+                        <option value="11">December</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="summary-year-select">Year:</label>
+                    <select id="summary-year-select" onchange="generateSummary()">
+                        <script>
+                            for (let i = currentYear - 1; i <= currentYear + 1; i++) {
+                                document.write(`<option value="${i}" ${i === currentYear ? 'selected' : ''}>${i}</option>`);
+                            }
+                        </script>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="summary-process-select">Process:</label>
+                    <select id="summary-process-select" onchange="generateSummary()">
+                        <option value="all">All Processes</option>
+                        <!-- Processes will be added here dynamically -->
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="summary-date-from">From:</label>
+                    <input type="date" id="summary-date-from" onchange="generateSummary()">
+                </div>
+                
+                <div>
+                    <label for="summary-date-to">To:</label>
+                    <input type="date" id="summary-date-to" onchange="generateSummary()">
+                </div>
+                
+                <button onclick="exportSummaryToExcel()">Export to Excel</button>
+            </div>
+            
+            <div class="container">
+                <div id="summary-container"></div>
+            </div>
+        </div>
+
+        <div id="time-tracking-tab" class="tab">
+            <div class="controls">
+                <div>
+                    <label for="tracking-user-select">User:</label>
+                    <select id="tracking-user-select" onchange="generateTimeTrackingView()">
+                        <!-- Users will be added dynamically -->
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="from-date">From:</label>
+                    <input type="date" id="from-date" onchange="generateTimeTrackingView()">
+                </div>
+                
+                <div>
+                    <label for="to-date">To:</label>
+                    <input type="date" id="to-date" onchange="generateTimeTrackingView()">
+                </div>
+                
+                <button onclick="exportTimeEntriesToExcel()">Export to Excel</button>
+            </div>
+            
+            <div id="time-entry-form" class="user-form" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <h3 style="width: 100%; margin-bottom: 10px;">Record Time Entry</h3>
+                
+                <div style="display: flex; align-items: center;">
+                    <label for="entry-user" style="margin-right: 5px;">User:</label>
+                    <select id="entry-user" required style="width: 150px;">
+                        <!-- Users will be added dynamically -->
+                    </select>
+                </div>
+                
+                <div style="display: flex; align-items: center;">
+                    <label for="entry-date" style="margin-right: 5px;">Date:</label>
+                    <input type="date" id="entry-date" required style="width: 150px;">
+                </div>
+                
+                <div style="display: flex; align-items: center;">
+                    <label for="entry-type" style="margin-right: 5px;">Type:</label>
+                    <select id="entry-type" onchange="toggleTimeFields()" required style="width: 150px;">
+                        <option value="">-- Select --</option>
+                        <option value="login">Login</option>
+                        <option value="break-start">Break Start</option>
+                        <option value="break-end">Break End</option>
+                        <option value="logout">Logout</option>
+                        <option value="status">Status Update</option>
+                    </select>
+                </div>
+                
+                <div id="time-fields" style="display: flex; align-items: center;">
+                    <label for="entry-time" style="margin-right: 5px;">Time:</label>
+                    <input type="time" id="entry-time" required style="width: 100px;">
+                </div>
+                
+                <div id="break-reason-fields" style="display: none; align-items: center;">
+                    <label for="entry-break-reason" style="margin-right: 5px;">Reason:</label>
+                    <select id="entry-break-reason" style="width: 120px;">
+                        <option value="Lunch">Lunch</option>
+                        <option value="Tea Break">Tea Break</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Meeting">Meeting</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                
+                <div id="status-fields" style="display: none; align-items: center;">
+                    <label for="entry-status" style="margin-right: 5px;">Status:</label>
+                    <select id="entry-status" style="width: 120px;">
+                        <option value="Week Off">Week Off</option>
+                        <option value="Comp Off">Comp Off</option>
+                        <option value="Leave">Leave</option>
+                        <option value="Holiday">Holiday</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; align-items: center;">
+                    <label for="entry-remarks" style="margin-right: 5px;">Remarks:</label>
+                    <input type="text" id="entry-remarks" placeholder="Optional" style="width: 150px;">
+                </div>
+                
+                <button onclick="addTimeEntry()" style="margin-left: 10px;">Add Entry</button>
+            </div>
+            
+            <h3>Time Entries</h3>
+            <div class="container">
+                <div id="time-entries-container"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Sample data - in a real app, you might want to load/save this to localStorage or a server
+        // Application Data
         let users = [
             { id: 1, name: "John Doe", process: "Customer Support", org: "Team A", email: "john.doe@example.com" },
             { id: 2, name: "Jane Smith", process: "Technical Support", org: "Team B", email: "jane.smith@example.com" },
             { id: 3, name: "Mike Johnson", process: "Sales", org: "Team A", email: "mike.johnson@example.com" },
         ];
         
-        let rosterData = {}; // Will store shift assignments {userId: {date: shift}}
-        let monthlyShifts = {}; // Stores monthly shift patterns {userId: {monthYear: shift}}
+        let userAccess = {
+            // Format: username: { password: "hashedpassword", role: "manager|associate", userId: 1 }
+        };
+        
+        let rosterData = {};
+        let monthlyShifts = {};
+        let timeEntries = {};
+        let currentUser = null;
         
         // Shift options for dropdown with color coding
         const shiftOptions = [
-            "0600 - 1500",
-            "0700 - 1600",
-            "0800 - 1700",
-            "0900 - 1800",
-            "1000 - 1900",
-            "1030 - 1930",
-            "1100 - 2000",
-            "1130 - 2030",
-            "1200 - 2100",
-            "1300 - 2200",
-            "1400 - 2300",
-            "1500 - 0000",
-            "1600 - 0100",
-            "1700 - 0200",
-            "1800 - 0300",
-            "1900 - 0400",
-            "1800 - 0500",
-            "1900 - 0600",
-            "Week Off",
-            "Comp Off",
-            "Leave",
-            "Back Up",
-            "Holiday"
+            "0600 - 1500", "0700 - 1600", "0800 - 1700", "0900 - 1800", 
+            "1000 - 1900", "1030 - 1930", "1100 - 2000", "1130 - 2030", 
+            "1200 - 2100", "1300 - 2200", "1400 - 2300", "1500 - 0000", 
+            "1600 - 0100", "1700 - 0200", "1800 - 0300", "1900 - 0400", 
+            "1800 - 0500", "1900 - 0600", "Week Off", "Comp Off", 
+            "Leave", "Back Up", "Holiday"
         ];
         
         // Initialize the app
-        document.addEventListener('DOMContentLoaded', function() {
-            renderUsersList();
-            generateRoster();
-            populateSummaryProcessSelect();
-            generateSummary();
-            
+        document.addEventListener('DOMContentLoaded', function() {// ===== DEFAULT TEST USERS (FOR FIRST-TIME USE) =====
+if (Object.keys(userAccess).length === 0) {
+    // Add default Manager and Associate
+    users = [
+        { id: 1, name: "Manager", process: "Management", org: "Admin", email: "manager@example.com" },
+        { id: 2, name: "Associate", process: "Operations", org: "Team A", email: "associate@example.com" }
+    ];
+
+    // Set their login credentials (username/password)
+    userAccess = {
+        "manager": { password: simpleHash("manager123"), role: "manager", userId: 1 },
+        "associate": { password: simpleHash("associate123"), role: "associate", userId: 2 }
+    };
+
+    // Save to localStorage
+    localStorage.setItem('rosterUsers', JSON.stringify(users));
+    localStorage.setItem('userAccess', JSON.stringify(userAccess));
+}
+// ===== END OF DEFAULT USERS =====
             // Load data from localStorage if available
             const savedUsers = localStorage.getItem('rosterUsers');
             const savedRoster = localStorage.getItem('rosterData');
             const savedMonthlyShifts = localStorage.getItem('monthlyShifts');
+            const savedTimeEntries = localStorage.getItem('timeEntries');
+            const savedUserAccess = localStorage.getItem('userAccess');
             
-            if (savedUsers) {
-                users = JSON.parse(savedUsers);
-                renderUsersList();
-                populateSummaryProcessSelect();
-            }
-            
-            if (savedRoster) {
-                rosterData = JSON.parse(savedRoster);
-            }
-            
-            if (savedMonthlyShifts) {
-                monthlyShifts = JSON.parse(savedMonthlyShifts);
-            }
+            if (savedUsers) users = JSON.parse(savedUsers);
+            if (savedRoster) rosterData = JSON.parse(savedRoster);
+            if (savedMonthlyShifts) monthlyShifts = JSON.parse(savedMonthlyShifts);
+            if (savedTimeEntries) timeEntries = JSON.parse(savedTimeEntries);
+            if (savedUserAccess) userAccess = JSON.parse(savedUserAccess);
             
             // Set current month
             const currentMonth = new Date().getMonth();
             document.getElementById('month-select').value = currentMonth;
             document.getElementById('summary-month-select').value = currentMonth;
+            
+            // Set default dates for summary
+            const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            document.getElementById('summary-date-from').valueAsDate = firstDayOfMonth;
+            document.getElementById('summary-date-to').valueAsDate = today;
+            
+            // Initialize login button
+            document.getElementById('login-btn').addEventListener('click', login);
         });
+        
+        // Login function
+        function login() {
+            const role = document.getElementById('login-role').value;
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            
+            if (!role || !username || !password) {
+                document.getElementById('login-error').textContent = 'Please fill all fields';
+                return;
+            }
+            
+            // Simple hash for password (in real app, use proper hashing)
+            const hashedPassword = simpleHash(password);
+            
+            // Check if user exists and credentials match
+            let userFound = false;
+            for (const [storedUsername, access] of Object.entries(userAccess)) {
+                if (storedUsername === username && access.password === hashedPassword && access.role === role) {
+                    userFound = true;
+                    currentUser = {
+                        username,
+                        role,
+                        userId: access.userId
+                    };
+                    break;
+                }
+            }
+            
+            if (!userFound) {
+                document.getElementById('login-error').textContent = 'Invalid credentials';
+                return;
+            }
+            
+            // Hide login screen and show app
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-container').style.display = 'block';
+            
+            // Initialize app based on user role
+            initAppForUser();
+        }
+        
+        // Simple hash function (for demo only - use proper hashing in production)
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = (hash << 5) - hash + char;
+                hash = hash & hash; // Convert to 32bit integer
+            }
+            return hash.toString();
+        }
+        
+        // Initialize app based on user role
+        function initAppForUser() {
+            renderUsersList();
+            populateSummaryProcessSelect();
+            generateRoster();
+            generateSummary();
+            initTimeTracking();
+            
+            // Hide/show elements based on user role
+            if (currentUser.role === 'associate') {
+                // Hide user management tab for associates
+                document.querySelector('.tab-button[onclick="openTab(\'manage-tab\')"]').style.display = 'none';
+                
+                // Hide user access section
+                document.getElementById('user-access-section').style.display = 'none';
+                
+                // Set the user dropdowns to show only the current user
+                const userSelects = [
+                    document.getElementById('tracking-user-select'),
+                    document.getElementById('entry-user'),
+                    document.getElementById('access-user-select')
+                ];
+                
+                userSelects.forEach(select => {
+                    select.innerHTML = '';
+                    const user = users.find(u => u.id === currentUser.userId);
+                    if (user) {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.name;
+                        select.appendChild(option);
+                    }
+                    select.disabled = true;
+                });
+            } else {
+                // Manager can see all users
+                populateUserSelects();
+            }
+            
+            // Open the roster tab by default
+            openTab('roster-tab');
+        }
+        
+        // Logout function
+        function logout() {
+            currentUser = null;
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('app-container').style.display = 'none';
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-error').textContent = '';
+        }
+        
+        // Set user access (manager only)
+        function setUserAccess() {
+            if (currentUser.role !== 'manager') return;
+            
+            const userId = parseInt(document.getElementById('access-user-select').value);
+            const accessLevel = document.getElementById('access-level').value;
+            const username = document.getElementById('access-username').value.trim();
+            const password = document.getElementById('access-password').value.trim();
+            
+            if (!userId || !username || !password) {
+                alert('Please fill all fields');
+                return;
+            }
+            
+            // Simple hash for password (in real app, use proper hashing)
+            const hashedPassword = simpleHash(password);
+            
+            // Set user access
+            userAccess[username] = {
+                password: hashedPassword,
+                role: accessLevel,
+                userId: userId
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('userAccess', JSON.stringify(userAccess));
+            
+            alert('User access updated successfully');
+            
+            // Clear form
+            document.getElementById('access-username').value = '';
+            document.getElementById('access-password').value = '';
+        }
         
         // Tab navigation
         function openTab(tabId) {
@@ -503,6 +874,8 @@
             
             if (tabId === 'summary-tab') {
                 generateSummary();
+            } else if (tabId === 'time-tracking-tab') {
+                generateTimeTrackingView();
             }
         }
         
@@ -547,8 +920,10 @@
             
             html += '</tr></thead><tbody>';
             
-            // Add rows for each user
-            users.forEach(user => {
+            // Add rows for each user (filtered for associates)
+            const usersToShow = currentUser.role === 'manager' ? users : users.filter(u => u.id === currentUser.userId);
+            
+            usersToShow.forEach(user => {
                 const monthYearKey = `${month}-${year}`;
                 const monthlyShift = monthlyShifts[user.id]?.[monthYearKey];
                 
@@ -557,7 +932,7 @@
                     <td class="fixed-columns">${user.process}</td>
                     <td class="fixed-columns">${user.org}</td>
                     <td class="fixed-columns">
-                        <select class="monthly-shift-select" id="monthly-shift-${user.id}" onchange="applyMonthlyShift(${user.id}, ${month}, ${year})">
+                        <select class="monthly-shift-select" id="monthly-shift-${user.id}" onchange="applyMonthlyShift(${user.id}, ${month}, ${year})" ${currentUser.role === 'associate' ? 'disabled' : ''}>
                             <option value="">-- Set Monthly --</option>
                             ${generateShiftOptions(monthlyShift)}
                         </select>
@@ -574,7 +949,7 @@
                     const shiftClass = isSpecialShift ? shift.replace(/\s+/g, '-') : '';
                     
                     html += `<td class="shift-cell ${shiftClass}">
-                        <select data-user="${user.id}" data-date="${dateStr}" onchange="updateShift(this)">
+                        <select data-user="${user.id}" data-date="${dateStr}" onchange="updateShift(this)" ${currentUser.role === 'associate' ? 'disabled' : ''}>
                             ${generateShiftOptions(shift)}
                         </select>
                         ${monthlyShift && shift === monthlyShift ? '<span title="Monthly pattern">★</span>' : ''}
@@ -610,8 +985,10 @@
             
             html += '</tr></thead><tbody>';
             
-            // Add rows for each user
-            users.forEach(user => {
+            // Add rows for each user (filtered for associates)
+            const usersToShow = currentUser.role === 'manager' ? users : users.filter(u => u.id === currentUser.userId);
+            
+            usersToShow.forEach(user => {
                 html += `<tr>
                     <td class="fixed-columns">${user.name}</td>
                     <td class="fixed-columns">${user.process}</td>
@@ -630,7 +1007,7 @@
                     const shiftClass = isSpecialShift ? shift.replace(/\s+/g, '-') : '';
                     
                     html += `<td class="shift-cell ${shiftClass}">
-                        <select data-user="${user.id}" data-date="${dateStr}" onchange="updateShift(this)">
+                        <select data-user="${user.id}" data-date="${dateStr}" onchange="updateShift(this)" ${currentUser.role === 'associate' ? 'disabled' : ''}>
                             ${generateShiftOptions(shift)}
                         </select>
                         ${monthlyShift && shift === monthlyShift ? '<span title="Monthly pattern">★</span>' : ''}
@@ -665,8 +1042,10 @@
                     <tbody>
             `;
             
-            // Add rows for each user
-            users.forEach(user => {
+            // Add rows for each user (filtered for associates)
+            const usersToShow = currentUser.role === 'manager' ? users : users.filter(u => u.id === currentUser.userId);
+            
+            usersToShow.forEach(user => {
                 const shift = getShiftForUser(user.id, dateStr);
                 const monthYearKey = `${month}-${year}`;
                 const monthlyShift = monthlyShifts[user.id]?.[monthYearKey];
@@ -683,13 +1062,13 @@
                         <td>${user.org}</td>
                         <td>${user.email}</td>
                         <td class="shift-cell ${shiftClass}">
-                            <select data-user="${user.id}" data-date="${dateStr}" onchange="updateShift(this)">
+                            <select data-user="${user.id}" data-date="${dateStr}" onchange="updateShift(this)" ${currentUser.role === 'associate' ? 'disabled' : ''}>
                                 ${generateShiftOptions(shift)}
                             </select>
                             ${monthlyShift && shift === monthlyShift ? '<span title="Monthly pattern">★</span>' : ''}
                         </td>
                         <td>
-                            <button class="send-email-btn" onclick="sendShiftEmail(${user.id}, '${dateStr}')">Send Email</button>
+                            <button class="send-email-btn" onclick="sendShiftEmail(${user.id}, '${dateStr}')" ${currentUser.role === 'associate' ? 'disabled' : ''}>Send Email</button>
                         </td>
                     </tr>
                 `;
@@ -798,6 +1177,8 @@
         }
         
         function copyFromPreviousMonth() {
+            if (currentUser.role !== 'manager') return;
+            
             const month = parseInt(document.getElementById('month-select').value);
             const year = parseInt(document.getElementById('year-select').value);
             
@@ -858,7 +1239,10 @@
             const usersList = document.getElementById('users-list');
             usersList.innerHTML = '';
             
-            users.forEach(user => {
+            // Filter users for associates
+            const usersToShow = currentUser.role === 'manager' ? users : users.filter(u => u.id === currentUser.userId);
+            
+            usersToShow.forEach(user => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${user.name}</td>
@@ -866,11 +1250,21 @@
                     <td>${user.org}</td>
                     <td>${user.email}</td>
                     <td>
-                        <button onclick="editUser(${user.id})">Edit</button>
-                        <button onclick="deleteUser(${user.id})">Delete</button>
+                        <button onclick="editUser(${user.id})" ${currentUser.role === 'associate' ? 'disabled' : ''}>Edit</button>
+                        <button onclick="deleteUser(${user.id})" ${currentUser.role === 'associate' ? 'disabled' : ''}>Delete</button>
                     </td>
                 `;
                 usersList.appendChild(row);
+            });
+            
+            // Populate user access dropdown
+            const accessUserSelect = document.getElementById('access-user-select');
+            accessUserSelect.innerHTML = '';
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.name;
+                accessUserSelect.appendChild(option);
             });
         }
         
@@ -894,6 +1288,8 @@
         }
         
         function addUser() {
+            if (currentUser.role !== 'manager') return;
+            
             const name = document.getElementById('new-user-name').value.trim();
             const process = document.getElementById('new-user-process').value.trim();
             const org = document.getElementById('new-user-org').value.trim();
@@ -930,6 +1326,7 @@
             renderUsersList();
             populateSummaryProcessSelect();
             generateRoster();
+            refreshUserDropdowns();
         }
         
         function validateEmail(email) {
@@ -938,6 +1335,8 @@
         }
         
         function editUser(userId) {
+            if (currentUser.role !== 'manager') return;
+            
             const user = users.find(u => u.id === userId);
             if (!user) return;
             
@@ -968,23 +1367,37 @@
             renderUsersList();
             populateSummaryProcessSelect();
             generateRoster();
+            refreshUserDropdowns();
         }
         
         function deleteUser(userId) {
+            if (currentUser.role !== 'manager') return;
+            
             if (confirm('Are you sure you want to delete this user?')) {
                 users = users.filter(u => u.id !== userId);
                 
                 // Remove from roster data
                 delete rosterData[userId];
                 delete monthlyShifts[userId];
+                delete timeEntries[userId];
+                
+                // Remove user access entries
+                for (const [username, access] of Object.entries(userAccess)) {
+                    if (access.userId === userId) {
+                        delete userAccess[username];
+                    }
+                }
                 
                 // Save and refresh
                 localStorage.setItem('rosterUsers', JSON.stringify(users));
                 localStorage.setItem('rosterData', JSON.stringify(rosterData));
                 localStorage.setItem('monthlyShifts', JSON.stringify(monthlyShifts));
+                localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+                localStorage.setItem('userAccess', JSON.stringify(userAccess));
                 renderUsersList();
                 populateSummaryProcessSelect();
                 generateRoster();
+                refreshUserDropdowns();
             }
         }
         
@@ -993,45 +1406,68 @@
             const month = parseInt(document.getElementById('summary-month-select').value);
             const year = parseInt(document.getElementById('summary-year-select').value);
             const process = document.getElementById('summary-process-select').value;
+            const fromDate = document.getElementById('summary-date-from').value;
+            const toDate = document.getElementById('summary-date-to').value;
             
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
             const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long' });
             
             // Filter users by process if needed
-            const filteredUsers = process === 'all' ? users : users.filter(u => u.process === process);
+            let filteredUsers = process === 'all' ? users : users.filter(u => u.process === process);
+            
+            // Filter for associates
+            if (currentUser.role === 'associate') {
+                filteredUsers = filteredUsers.filter(u => u.id === currentUser.userId);
+            }
             
             // Daily shift counts (dates as rows, shifts as columns)
             let dailyShiftCounts = {};
             let sundayWorkers = [];
             
-            // Initialize dailyShiftCounts with all dates
-            for (let day = 1; day <= daysInMonth; day++) {
-                dailyShiftCounts[day] = {};
+            // Get date range
+            const from = new Date(fromDate);
+            const to = new Date(toDate);
+            
+            // Initialize dailyShiftCounts with all dates in range
+            let currentDate = new Date(from);
+            while (currentDate <= to) {
+                const day = currentDate.getDate();
+                const month = currentDate.getMonth();
+                const year = currentDate.getFullYear();
+                const dateKey = `${year}-${month + 1}-${day}`;
+                
+                dailyShiftCounts[dateKey] = {};
                 shiftOptions.forEach(shift => {
-                    dailyShiftCounts[day][shift] = 0;
+                    dailyShiftCounts[dateKey][shift] = 0;
                 });
+                
+                currentDate.setDate(currentDate.getDate() + 1);
             }
             
             // Process each user's shifts
             filteredUsers.forEach(user => {
-                for (let day = 1; day <= daysInMonth; day++) {
+                currentDate = new Date(from);
+                while (currentDate <= to) {
+                    const day = currentDate.getDate();
+                    const month = currentDate.getMonth();
+                    const year = currentDate.getFullYear();
                     const dateStr = `${year}-${month + 1}-${day}`;
-                    const date = new Date(year, month, day);
                     const shift = getShiftForUser(user.id, dateStr) || 'Not Scheduled';
                     
                     // Count users in each shift
                     if (shift !== 'Not Scheduled') {
-                        dailyShiftCounts[day][shift] = (dailyShiftCounts[day][shift] || 0) + 1;
+                        dailyShiftCounts[dateStr][shift] = (dailyShiftCounts[dateStr][shift] || 0) + 1;
                     }
                     
                     // Check for Sunday workers
-                    if (date.getDay() === 0 && shift !== 'Week Off' && shift !== 'Holiday' && shift !== 'Not Scheduled') {
+                    if (currentDate.getDay() === 0 && shift !== 'Week Off' && shift !== 'Holiday' && shift !== 'Not Scheduled') {
                         sundayWorkers.push({
                             user: user.name,
-                            date: day,
+                            date: dateStr,
                             shift: shift
                         });
                     }
+                    
+                    currentDate.setDate(currentDate.getDate() + 1);
                 }
             });
             
@@ -1041,12 +1477,15 @@
                 sundayWorkers,
                 monthName, 
                 year,
-                process
+                process,
+                fromDate,
+                toDate
             );
         }
         
-        function displaySummary(dailyShiftCounts, sundayWorkers, monthName, year, selectedProcess) {
+        function displaySummary(dailyShiftCounts, sundayWorkers, monthName, year, selectedProcess, fromDate, toDate) {
             let html = `<h3>Shift Summary for ${monthName} ${year} ${selectedProcess !== 'all' ? `(Process: ${selectedProcess})` : ''}</h3>`;
+            html += `<p>Date Range: ${formatDisplayDate(fromDate)} to ${formatDisplayDate(toDate)}</p>`;
             
             // 1. Daily shift counts (dates as rows, shifts as columns)
             html += `
@@ -1069,12 +1508,13 @@
                 shiftTotals[shift] = 0;
             });
             
-            Object.entries(dailyShiftCounts).forEach(([day, shifts]) => {
-                const date = new Date(year, parseInt(document.getElementById('summary-month-select').value), parseInt(day));
+            Object.entries(dailyShiftCounts).forEach(([dateStr, shifts]) => {
+                const date = new Date(dateStr);
                 const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                const displayDate = formatDisplayDate(dateStr);
                 
                 let rowTotal = 0;
-                html += `<tr><td>${day} ${dayName}</td>`;
+                html += `<tr><td>${displayDate} ${dayName}</td>`;
                 
                 shiftOptions.forEach(shift => {
                     const count = shifts[shift] || 0;
@@ -1124,7 +1564,7 @@
                     html += `
                         <tr>
                             <td>${worker.user}</td>
-                            <td>${monthName} ${worker.date}</td>
+                            <td>${formatDisplayDate(worker.date)}</td>
                             <td>${worker.shift}</td>
                         </tr>
                     `;
@@ -1140,10 +1580,217 @@
             
             html += `</div>`;
             
+            // 3. Time Tracking Summary
+            html += `
+                <div class="summary-container">
+                    <h4>Time Tracking Summary</h4>
+                    <table class="summary-table" id="time-tracking-summary">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Date</th>
+                                <th>Login</th>
+                                <th>Breaks</th>
+                                <th>Logout</th>
+                                <th>Total Hours</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            // Get filtered users
+            let filteredUsers = selectedProcess === 'all' ? users : users.filter(u => u.process === selectedProcess);
+            if (currentUser.role === 'associate') {
+                filteredUsers = filteredUsers.filter(u => u.id === currentUser.userId);
+            }
+            
+            // Get date range
+            const from = new Date(fromDate);
+            const to = new Date(toDate);
+            
+            // Add time tracking data
+            filteredUsers.forEach(user => {
+                let currentDate = new Date(from);
+                while (currentDate <= to) {
+                    const dateStr = formatDateForStorage(currentDate);
+                    const entries = timeEntries[user.id]?.[dateStr] || [];
+                    const { login, breaks, logout, status } = processEntries(entries);
+                    const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'short' });
+                    
+                    if (login || logout || breaks.length > 0 || status) {
+                        html += `
+                            <tr>
+                                <td>${user.name}</td>
+                                <td>${formatDisplayDate(dateStr)} ${dayName}</td>
+                                <td>${login || '-'}</td>
+                                <td>${formatBreaks(breaks)}</td>
+                                <td>${logout || '-'}</td>
+                                <td>${calculateTotalHours(login, breaks, logout)}</td>
+                                <td>${status || '-'}</td>
+                            </tr>
+                        `;
+                    }
+                    
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
             document.getElementById('summary-container').innerHTML = html;
         }
         
-        // Email function (simulated)
+        function formatDisplayDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        
+        function exportSummaryToExcel() {
+            const month = parseInt(document.getElementById('summary-month-select').value);
+            const year = parseInt(document.getElementById('summary-year-select').value);
+            const process = document.getElementById('summary-process-select').value;
+            const fromDate = document.getElementById('summary-date-from').value;
+            const toDate = document.getElementById('summary-date-to').value;
+            
+            const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long' });
+            
+            // Filter users by process if needed
+            let filteredUsers = process === 'all' ? users : users.filter(u => u.process === process);
+            
+            // Filter for associates
+            if (currentUser.role === 'associate') {
+                filteredUsers = filteredUsers.filter(u => u.id === currentUser.userId);
+            }
+            
+            // Prepare data for export
+            const data = [
+                ['Operations Management Tool - Summary Report'],
+                [`Period: ${formatDisplayDate(fromDate)} to ${formatDisplayDate(toDate)}`],
+                [`Process: ${process === 'all' ? 'All Processes' : process}`],
+                [''],
+                ['Shift Summary'],
+                ['Date', 'Day', ...shiftOptions.map(shift => shift), 'Total']
+            ];
+            
+            // Get date range
+            const from = new Date(fromDate);
+            const to = new Date(toDate);
+            
+            // Add shift data
+            let currentDate = new Date(from);
+            while (currentDate <= to) {
+                const day = currentDate.getDate();
+                const month = currentDate.getMonth();
+                const year = currentDate.getFullYear();
+                const dateStr = `${year}-${month + 1}-${day}`;
+                const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'short' });
+                
+                // Calculate counts for each shift
+                const shiftCounts = {};
+                shiftOptions.forEach(shift => {
+                    shiftCounts[shift] = 0;
+                });
+                
+                let total = 0;
+                filteredUsers.forEach(user => {
+                    const shift = getShiftForUser(user.id, dateStr) || 'Not Scheduled';
+                    if (shift !== 'Not Scheduled') {
+                        shiftCounts[shift]++;
+                        total++;
+                    }
+                });
+                
+                const row = [formatDisplayDate(dateStr), dayName];
+                shiftOptions.forEach(shift => {
+                    row.push(shiftCounts[shift] > 0 ? shiftCounts[shift] : '');
+                });
+                row.push(total);
+                
+                data.push(row);
+                
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            // Add time tracking data
+            data.push(['']);
+            data.push(['Time Tracking Summary']);
+            data.push(['User', 'Date', 'Day', 'Login', 'Breaks', 'Logout', 'Total Hours', 'Status']);
+            
+            currentDate = new Date(from);
+            while (currentDate <= to) {
+                const dateStr = formatDateForStorage(currentDate);
+                const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'short' });
+                
+                filteredUsers.forEach(user => {
+                    const entries = timeEntries[user.id]?.[dateStr] || [];
+                    const { login, breaks, logout, status } = processEntries(entries);
+                    
+                    if (login || logout || breaks.length > 0 || status) {
+                        const breakText = breaks.map(b => {
+                            let breakInfo = '';
+                            if (b.start && b.end) {
+                                breakInfo = `${b.start}-${b.end}`;
+                            } else if (b.start) {
+                                breakInfo = `${b.start}-(ongoing)`;
+                            }
+                            
+                            if (b.reason) {
+                                breakInfo += ` (${b.reason})`;
+                            }
+                            return breakInfo;
+                        }).filter(Boolean).join('\n');
+                        
+                        data.push([
+                            user.name,
+                            formatDisplayDate(dateStr),
+                            dayName,
+                            login || '',
+                            breakText,
+                            logout || '',
+                            calculateTotalHours(login, breaks, logout),
+                            status || ''
+                        ]);
+                    }
+                });
+                
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 12 }, // Date
+                { wch: 8 },  // Day
+                ...shiftOptions.map(() => ({ wch: 12 })), // Shift columns
+                { wch: 8 },  // Total
+                { wch: 20 }, // User
+                { wch: 12 }, // Date
+                { wch: 8 },  // Day
+                { wch: 12 }, // Login
+                { wch: 30 }, // Breaks
+                { wch: 12 }, // Logout
+                { wch: 12 }, // Total Hours
+                { wch: 12 }  // Status
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, 'Summary Report');
+            
+            // Generate file name
+            const fileName = `Operations_Summary_${monthName}_${year}_${formatDisplayDate(fromDate)}_to_${formatDisplayDate(toDate)}`;
+            
+            // Export
+            XLSX.writeFile(wb, `${fileName}.xlsx`);
+        }
+        
+        // Email functions
         function sendShiftEmail(userId, dateStr) {
             const user = users.find(u => u.id === userId);
             if (!user || !user.email) {
@@ -1163,9 +1810,97 @@
             
             // In a real app, you would send an actual email here
             // This is just a simulation
-            alert(`Email would be sent to: ${user.email}\nSubject: Your Shift Update\n\nDear ${user.name},\n\nYour shift on ${dateFormatted} has been updated to: ${shift}\n\nThank you,\nShift Management Team`);
+            alert(`Email would be sent to: ${user.email}\nSubject: Your Shift Update\n\nDear ${user.name},\n\nYour shift on ${dateFormatted} has been updated to: ${shift}\n\nThank you,\nOperations Management Team`);
             
             console.log(`Email sent to ${user.email} about shift ${shift} on ${dateStr}`);
+        }
+        
+        function sendBulkEmail() {
+            if (currentUser.role !== 'manager') return;
+            
+            const view = document.querySelector('input[name="view"]:checked').value;
+            const month = parseInt(document.getElementById('month-select').value);
+            const year = parseInt(document.getElementById('year-select').value);
+            const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long' });
+            
+            let emailContent = '';
+            let subject = '';
+            
+            if (view === 'monthly') {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                subject = `Monthly Roster for ${monthName} ${year}`;
+                
+                emailContent = `<h2>${subject}</h2><table border="1"><tr><th>User</th><th>Process</th><th>Org</th>`;
+                
+                // Add date headers
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month, day);
+                    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                    emailContent += `<th>${day} ${dayName}</th>`;
+                }
+                
+                emailContent += '</tr>';
+                
+                // Add user data
+                users.forEach(user => {
+                    emailContent += `<tr><td>${user.name}</td><td>${user.process}</td><td>${user.org}</td>`;
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dateStr = `${year}-${month + 1}-${day}`;
+                        const shift = getShiftForUser(user.id, dateStr) || '';
+                        emailContent += `<td>${shift}</td>`;
+                    }
+                    
+                    emailContent += '</tr>';
+                });
+                
+                emailContent += '</table>';
+            } 
+            else if (view === 'weekly') {
+                const week = parseInt(document.getElementById('week-select').value);
+                const weekStart = (week - 1) * 7 + 1;
+                let weekDates = [];
+                
+                subject = `Weekly Roster for Week ${week} of ${monthName} ${year}`;
+                
+                for (let i = 0; i < 7; i++) {
+                    const day = weekStart + i;
+                    if (day > new Date(year, month + 1, 0).getDate()) break;
+                    weekDates.push(day);
+                }
+                
+                emailContent = `<h2>${subject}</h2><table border="1"><tr><th>User</th><th>Process</th><th>Org</th>`;
+                
+                // Add date headers
+                weekDates.forEach(day => {
+                    const date = new Date(year, month, day);
+                    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                    emailContent += `<th>${day} ${dayName}</th>`;
+                });
+                
+                emailContent += '</tr>';
+                
+                // Add user data
+                users.forEach(user => {
+                    emailContent += `<tr><td>${user.name}</td><td>${user.process}</td><td>${user.org}</td>`;
+                    
+                    weekDates.forEach(day => {
+                        const dateStr = `${year}-${month + 1}-${day}`;
+                        const shift = getShiftForUser(user.id, dateStr) || '';
+                        emailContent += `<td>${shift}</td>`;
+                    });
+                    
+                    emailContent += '</tr>';
+                });
+                
+                emailContent += '</table>';
+            }
+            
+            // In a real app, you would send actual emails here
+            // This is just a simulation
+            alert(`Bulk email would be sent to all users with subject: ${subject}\n\nEmail content:\n${emailContent}`);
+            
+            console.log(`Bulk email sent with subject: ${subject}`);
         }
         
         // Export to Excel
@@ -1186,8 +1921,10 @@
                     headers.push(`${monthName} ${day}`);
                 }
                 
-                // Add user data
-                users.forEach(user => {
+                // Add user data (filtered for associates)
+                const usersToShow = currentUser.role === 'manager' ? users : users.filter(u => u.id === currentUser.userId);
+                
+                usersToShow.forEach(user => {
                     const row = [user.name, user.process, user.org];
                     
                     for (let day = 1; day <= daysInMonth; day++) {
@@ -1210,8 +1947,10 @@
                     headers.push(`${monthName} ${day}`);
                 }
                 
-                // Add user data
-                users.forEach(user => {
+                // Add user data (filtered for associates)
+                const usersToShow = currentUser.role === 'manager' ? users : users.filter(u => u.id === currentUser.userId);
+                
+                usersToShow.forEach(user => {
                     const row = [user.name, user.process, user.org];
                     
                     weekDates.forEach(day => {
@@ -1226,8 +1965,10 @@
                 const day = parseInt(document.getElementById('day-select').value);
                 headers.push(`${monthName} ${day}`);
                 
-                // Add user data
-                users.forEach(user => {
+                // Add user data (filtered for associates)
+                const usersToShow = currentUser.role === 'manager' ? users : users.filter(u => u.id === currentUser.userId);
+                
+                usersToShow.forEach(user => {
                     const dateStr = `${year}-${month + 1}-${day}`;
                     data.push([
                         user.name,
@@ -1249,6 +1990,497 @@
                 fileName += `_Week${week}`;
             } else if (view === 'daily') {
                 fileName += `_Day${day}`;
+            }
+            
+            // Export
+            XLSX.writeFile(wb, `${fileName}.xlsx`);
+        }
+
+        // Time Tracking Functions
+        function initTimeTracking() {
+            populateUserSelects();
+            setDefaultDates();
+            generateTimeTrackingView();
+        }
+        
+        function populateUserSelects() {
+            const userSelect1 = document.getElementById('tracking-user-select');
+            const userSelect2 = document.getElementById('entry-user');
+            const accessUserSelect = document.getElementById('access-user-select');
+            
+            // Clear existing options
+            userSelect1.innerHTML = '';
+            userSelect2.innerHTML = '';
+            accessUserSelect.innerHTML = '';
+            
+            // Add default "Select User" option for tracking
+            const defaultOption1 = document.createElement('option');
+            defaultOption1.value = '';
+            defaultOption1.textContent = currentUser.role === 'manager' ? '-- Select User --' : '-- My Entries --';
+            userSelect1.appendChild(defaultOption1);
+            
+            // Add default "Select User" option for entry
+            const defaultOption2 = document.createElement('option');
+            defaultOption2.value = '';
+            defaultOption2.textContent = '-- Select User --';
+            userSelect2.appendChild(defaultOption2);
+            
+            // Add all users or just the current user based on role
+            if (currentUser.role === 'manager') {
+                // Manager can see all users
+                users.forEach(user => {
+                    const option1 = document.createElement('option');
+                    option1.value = user.id;
+                    option1.textContent = user.name;
+                    userSelect1.appendChild(option1);
+                    
+                    const option2 = document.createElement('option');
+                    option2.value = user.id;
+                    option2.textContent = user.name;
+                    userSelect2.appendChild(option2);
+                    
+                    const option3 = document.createElement('option');
+                    option3.value = user.id;
+                    option3.textContent = user.name;
+                    accessUserSelect.appendChild(option3);
+                });
+                
+                // Add "All Users" option for manager
+                const allOption = document.createElement('option');
+                allOption.value = 'all';
+                allOption.textContent = 'All Users';
+                userSelect1.insertBefore(allOption, userSelect1.firstChild.nextSibling);
+            } else {
+                // Associate can only see themselves
+                const user = users.find(u => u.id === currentUser.userId);
+                if (user) {
+                    const option1 = document.createElement('option');
+                    option1.value = user.id;
+                    option1.textContent = user.name;
+                    userSelect1.appendChild(option1);
+                    
+                    const option2 = document.createElement('option');
+                    option2.value = user.id;
+                    option2.textContent = user.name;
+                    userSelect2.appendChild(option2);
+                }
+            }
+            
+            // Set default selected user to current user if associate
+            if (currentUser.role === 'associate') {
+                userSelect1.value = currentUser.userId;
+                userSelect2.value = currentUser.userId;
+            }
+        }
+        
+        function refreshUserDropdowns() {
+            populateUserSelects();
+            generateTimeTrackingView();
+        }
+        
+        function setDefaultDates() {
+            const today = new Date();
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(today.getDate() - 7);
+            
+            document.getElementById('from-date').valueAsDate = sevenDaysAgo;
+            document.getElementById('to-date').valueAsDate = today;
+            document.getElementById('entry-date').valueAsDate = today;
+        }
+        
+        function toggleTimeFields() {
+            const entryType = document.getElementById('entry-type').value;
+            const timeFields = document.getElementById('time-fields');
+            const breakReasonFields = document.getElementById('break-reason-fields');
+            const statusFields = document.getElementById('status-fields');
+            
+            timeFields.style.display = 'none';
+            breakReasonFields.style.display = 'none';
+            statusFields.style.display = 'none';
+            
+            if (entryType === 'status') {
+                statusFields.style.display = 'flex';
+            } else if (entryType === 'break-start' || entryType === 'break-end') {
+                timeFields.style.display = 'flex';
+                breakReasonFields.style.display = 'flex';
+            } else if (entryType === 'login' || entryType === 'logout') {
+                timeFields.style.display = 'flex';
+            }
+        }
+        
+        function generateTimeTrackingView() {
+            const userId = document.getElementById('tracking-user-select').value;
+            const fromDate = document.getElementById('from-date').value;
+            const toDate = document.getElementById('to-date').value;
+            
+            if (!fromDate || !toDate) {
+                document.getElementById('time-entries-container').innerHTML = '<p>Please select a date range</p>';
+                return;
+            }
+            
+            // Get users to show
+            let usersToShow = [];
+            if (userId === 'all') {
+                usersToShow = users;
+            } else if (userId) {
+                const user = users.find(u => u.id === parseInt(userId));
+                if (user) usersToShow = [user];
+            }
+            
+            // If no users selected (and not "all"), show current user for associates
+            if (usersToShow.length === 0 && currentUser.role === 'associate') {
+                const user = users.find(u => u.id === currentUser.userId);
+                if (user) usersToShow = [user];
+            }
+            
+            if (usersToShow.length === 0) {
+                document.getElementById('time-entries-container').innerHTML = '<p>Please select a user</p>';
+                return;
+            }
+            
+            // Parse date range
+            const from = new Date(fromDate);
+            const to = new Date(toDate);
+            
+            // Generate HTML
+            let html = `<h4>Time Entries</h4>`;
+            html += `<p>Showing data from ${formatDate(from)} to ${formatDate(to)}</p>`;
+            
+            html += `<table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Date</th>
+                        <th>Day</th>
+                        <th>Login</th>
+                        <th>Breaks</th>
+                        <th>Logout</th>
+                        <th>Total Hours</th>
+                        <th>Status</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            
+            // Get all dates in range
+            const dateArray = [];
+            let currentDate = new Date(from);
+            
+            while (currentDate <= to) {
+                dateArray.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            // Add rows for each user and date
+            usersToShow.forEach(user => {
+                dateArray.forEach(date => {
+                    const dateStr = formatDateForStorage(date);
+                    const entries = timeEntries[user.id]?.[dateStr] || [];
+                    const { login, breaks, logout, status, remarks } = processEntries(entries);
+                    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                    
+                    if (login || logout || breaks.length > 0 || status) {
+                        html += `<tr>
+                            <td>${user.name}</td>
+                            <td>${formatDate(date)}</td>
+                            <td>${dayName}</td>
+                            <td>${login || '-'}</td>
+                            <td>${formatBreaks(breaks)}</td>
+                            <td>${logout || '-'}</td>
+                            <td>${calculateTotalHours(login, breaks, logout)}</td>
+                            <td>${status || '-'}</td>
+                            <td>${remarks || '-'}</td>
+                        </tr>`;
+                    }
+                });
+            });
+            
+            html += `</tbody></table>`;
+            
+            document.getElementById('time-entries-container').innerHTML = html;
+        }
+        
+        function formatBreaks(breaks) {
+            if (!breaks || breaks.length === 0) return '-';
+            
+            return breaks.map(b => {
+                let breakInfo = '';
+                if (b.start && b.end) {
+                    breakInfo = `${b.start} - ${b.end}`;
+                } else if (b.start) {
+                    breakInfo = `${b.start} - (ongoing)`;
+                }
+                
+                if (b.reason) {
+                    breakInfo += ` (${b.reason})`;
+                }
+                return breakInfo;
+            }).filter(Boolean).join('<br>');
+        }
+        
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+        
+        function formatDateForStorage(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        function processEntries(entries) {
+            const result = {
+                login: null,
+                breaks: [],
+                logout: null,
+                status: null,
+                remarks: null
+            };
+            
+            entries.forEach(entry => {
+                if (entry.type === 'login') {
+                    result.login = entry.time;
+                    if (entry.remarks) result.remarks = entry.remarks;
+                } else if (entry.type === 'logout') {
+                    result.logout = entry.time;
+                    if (entry.remarks) result.remarks = entry.remarks;
+                } else if (entry.type === 'break-start') {
+                    result.breaks.push({ 
+                        start: entry.time, 
+                        end: null,
+                        reason: entry.reason || null
+                    });
+                    if (entry.remarks) result.remarks = entry.remarks;
+                } else if (entry.type === 'break-end') {
+                    if (result.breaks.length > 0 && result.breaks[result.breaks.length - 1].end === null) {
+                        result.breaks[result.breaks.length - 1].end = entry.time;
+                        if (entry.remarks) result.remarks = entry.remarks;
+                    } else {
+                        // If no matching break-start, add as new break
+                        result.breaks.push({ 
+                            start: null, 
+                            end: entry.time,
+                            reason: entry.reason || null
+                        });
+                        if (entry.remarks) result.remarks = entry.remarks;
+                    }
+                } else if (entry.type === 'status') {
+                    result.status = entry.status;
+                    if (entry.remarks) result.remarks = entry.remarks;
+                }
+            });
+            
+            return result;
+        }
+        
+        function calculateTotalHours(login, breaks, logout) {
+            if (!login || !logout) return '-';
+            
+            // Convert times to minutes since midnight
+            const loginMinutes = timeToMinutes(login);
+            const logoutMinutes = timeToMinutes(logout);
+            
+            // Calculate break time
+            let breakMinutes = 0;
+            breaks.forEach(b => {
+                if (b.start && b.end) {
+                    breakMinutes += timeToMinutes(b.end) - timeToMinutes(b.start);
+                }
+            });
+            
+            // Calculate total working minutes
+            const totalMinutes = logoutMinutes - loginMinutes - breakMinutes;
+            if (totalMinutes <= 0) return '0h';
+            
+            // Convert back to hours and minutes
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            
+            return `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}`;
+        }
+        
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+        
+        function addTimeEntry() {
+            const userId = document.getElementById('entry-user').value;
+            const date = document.getElementById('entry-date').value;
+            const entryType = document.getElementById('entry-type').value;
+            
+            if (!userId || !date || !entryType) {
+                alert('Please fill all required fields');
+                return;
+            }
+            
+            const entry = {
+                type: entryType,
+                timestamp: new Date().toISOString()
+            };
+            
+            if (entryType === 'status') {
+                entry.status = document.getElementById('entry-status').value;
+            } else if (entryType === 'break-start' || entryType === 'break-end') {
+                const timeValue = document.getElementById('entry-time').value;
+                if (!timeValue) {
+                    alert('Please enter a valid time');
+                    return;
+                }
+                entry.time = timeValue;
+                entry.reason = document.getElementById('entry-break-reason').value;
+            } else if (entryType === 'login' || entryType === 'logout') {
+                const timeValue = document.getElementById('entry-time').value;
+                if (!timeValue) {
+                    alert('Please enter a valid time');
+                    return;
+                }
+                entry.time = timeValue;
+            }
+            
+            const remarks = document.getElementById('entry-remarks').value;
+            if (remarks) entry.remarks = remarks;
+            
+            // Add to timeEntries structure
+            if (!timeEntries[userId]) timeEntries[userId] = {};
+            if (!timeEntries[userId][date]) timeEntries[userId][date] = [];
+            
+            timeEntries[userId][date].push(entry);
+            
+            // Sort entries chronologically
+            timeEntries[userId][date].sort((a, b) => {
+                if (a.time && b.time) {
+                    return a.time.localeCompare(b.time);
+                }
+                return 0;
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+            
+            // Clear form (except user and date)
+            document.getElementById('entry-type').value = '';
+            document.getElementById('entry-time').value = '';
+            document.getElementById('entry-status').value = 'Week Off';
+            document.getElementById('entry-break-reason').value = 'Lunch';
+            document.getElementById('entry-remarks').value = '';
+            toggleTimeFields();
+            
+            // Refresh view
+            generateTimeTrackingView();
+        }
+        
+        function exportTimeEntriesToExcel() {
+            const userId = document.getElementById('tracking-user-select').value;
+            const fromDate = document.getElementById('from-date').value;
+            const toDate = document.getElementById('to-date').value;
+            
+            if (!fromDate || !toDate) {
+                alert('Please select date range');
+                return;
+            }
+            
+            // Get users to export
+            let usersToExport = [];
+            if (userId === 'all') {
+                usersToExport = users;
+            } else if (userId) {
+                const user = users.find(u => u.id === parseInt(userId));
+                if (user) usersToExport = [user];
+            }
+            
+            // If no users selected (and not "all"), export current user for associates
+            if (usersToExport.length === 0 && currentUser.role === 'associate') {
+                const user = users.find(u => u.id === currentUser.userId);
+                if (user) usersToExport = [user];
+            }
+            
+            if (usersToExport.length === 0) {
+                alert('Please select a user');
+                return;
+            }
+            
+            // Parse date range
+            const from = new Date(fromDate);
+            const to = new Date(toDate);
+            
+            // Prepare data for export
+            const data = [
+                ['User', 'Date', 'Day', 'Login Time', 'Breaks', 'Logout Time', 'Total Hours', 'Status', 'Remarks']
+            ];
+            
+            // Get all dates in range
+            const dateArray = [];
+            let currentDate = new Date(from);
+            
+            while (currentDate <= to) {
+                dateArray.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            // Add data for each user and date
+            usersToExport.forEach(user => {
+                dateArray.forEach(date => {
+                    const dateStr = formatDateForStorage(date);
+                    const entries = timeEntries[user.id]?.[dateStr] || [];
+                    const { login, breaks, logout, status, remarks } = processEntries(entries);
+                    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                    
+                    if (login || logout || breaks.length > 0 || status) {
+                        const breakText = breaks.map(b => {
+                            let breakInfo = '';
+                            if (b.start && b.end) {
+                                breakInfo = `${b.start}-${b.end}`;
+                            } else if (b.start) {
+                                breakInfo = `${b.start}-(ongoing)`;
+                            }
+                            
+                            if (b.reason) {
+                                breakInfo += ` (${b.reason})`;
+                            }
+                            return breakInfo;
+                        }).filter(Boolean).join('\n');
+                        
+                        data.push([
+                            user.name,
+                            formatDate(date),
+                            dayName,
+                            login || '',
+                            breakText,
+                            logout || '',
+                            calculateTotalHours(login, breaks, logout),
+                            status || '',
+                            remarks || ''
+                        ]);
+                    }
+                });
+            });
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 20 }, // User
+                { wch: 12 }, // Date
+                { wch: 8 },  // Day
+                { wch: 12 }, // Login
+                { wch: 30 }, // Breaks
+                { wch: 12 }, // Logout
+                { wch: 12 }, // Total Hours
+                { wch: 12 }, // Status
+                { wch: 20 }  // Remarks
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, 'Time Entries');
+            
+            // Generate file name
+            let fileName = `Time_Entries_${formatDate(from)}_to_${formatDate(to)}`;
+            if (userId !== 'all') {
+                const user = usersToExport[0];
+                fileName = `Time_Entries_${user.name.replace(/\s+/g, '_')}_${formatDate(from)}_to_${formatDate(to)}`;
             }
             
             // Export
